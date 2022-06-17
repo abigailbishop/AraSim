@@ -2078,6 +2078,18 @@ Detector::Detector(Settings *settings1, IceModel *icesurface, string setupfile) 
 		ReadTemp_TestBed("./data/system_temperature.csv", settings1);// only TestBed for now
 	      }
 	    }
+
+        /*! 
+            load rayleigh fit and use it for noise generation, 2022-06-17 -MK-
+            barrowing testbed function
+            It needs to specify DETECTOR_STATION and DETECTOR_STATION_LIVETIME_CONFIG options
+        */
+        if (settings1->NOISE==2){
+            cout<<"     Reading rayleigh distribution"<<endl;
+            string rayl_filepath = "data/Rayleigh_A"+settings1->DETECTOR_STATION+"_C"+settings1->DETECTOR_STATION_LIVETIME_CONFIG+".csv"
+            ReadRayleighFit_TestBed(rayl_filepath, settings1);
+        }
+
 	    /*
         if (settings1->DETECTOR_STATION == 2){
             if ( settings1->NOISE==1) {
@@ -2134,6 +2146,11 @@ Detector::Detector(Settings *settings1, IceModel *icesurface, string setupfile) 
             //read a custom user defined electronics gain
             cout<<"     Reading custom electronics response"<<endl;
              ReadElectChain("./data/custom_electronics.txt", settings1);
+        }
+        else if (settings1->CUSTOM_ELECTRONICS==2){ ///< electric chain for individual channels, 2022-06-17 -MK-
+            cout<<"     Reading in-situ based electronics response"<<endl;       
+            string rayl_filepath = "data/In_situ_Electronics_Gain_A"+settings1->DETECTOR_STATION+"_C"+settings1->DETECTOR_STATION_LIVETIME_CONFIG+".txt"
+ 
         }
 	    cout<<"done read elect chain"<<endl;
     
@@ -3283,38 +3300,36 @@ double Detector::GetFOAMGain_1D_OutZero( double freq ) {
 
 
 // set outside value as 0
-double Detector::GetElectGain_1D_OutZero( double freq ) {
-
-
-    double slope_1; // slope of init part
+double Detector::GetElectGain_1D_OutZero( double freq, int ch ) {
 
     double Gout;
-
-    int bin = (int)( (freq - freq_init) / freq_width )+1;
-
-
-    slope_1 = (ElectGain[1] - ElectGain[0]) / (Freq[1] - Freq[0]);
-
 
     // if freq is lower than freq_init
     if ( freq < freq_init ) {
 
-        //Gout = slope_1 * (freq - Freq[0]) + ElectGain[0];
         Gout = 0.;
     }
     // if freq is higher than last freq
     else if ( freq > Freq[freq_step-1] ) {
 
-        //Gout = slope_2 * (freq - Freq[freq_step-1]) + FOAMGain[freq_step-1];
         Gout = 0.;
     }
 
     else {
 
-        Gout = ElectGain[bin-1] + (freq-Freq[bin-1])*(ElectGain[bin]-ElectGain[bin-1])/(Freq[bin]-Freq[bin-1]);
-    } // not outside the Freq[] range
-    
+        int bin = (int)( (freq - freq_init) / freq_width )+1;
+        double EleGain_1, EleGain_0;
 
+        if (ch == -1){
+            EleGain_0 = ElectGain[bin-1];
+            EleGain_1 = ElectGain[bin];
+        } else {
+            EleGain_0 = ElectGain_ch[ch][bin-1];
+            EleGain_1 = ElectGain_ch[ch][bin];
+        }
+        Gout = EleGain_0 + (freq-Freq[bin-1])*(EleGain_1-EleGain_0)/(Freq[bin]-Freq[bin-1]);
+
+    } // not outside the Freq[] range
 
     return Gout;
 
@@ -3323,11 +3338,10 @@ double Detector::GetElectGain_1D_OutZero( double freq ) {
 
 
 // set outside value as 0
-double Detector::GetElectPhase_1D( double freq ) {
-
+double Detector::GetElectPhase_1D( double freq, int ch ) {
 
     double slope_1, slope_2; // slope of init, final part
-    double slope_t1, slope_t2; // slope of pre, after the freq bin
+    double ElePhase_0, ElePhase_1, ElePhase_f0, ElePhase_f1;
 
     double phase;
 
@@ -3335,14 +3349,24 @@ double Detector::GetElectPhase_1D( double freq ) {
 
     // ElectPhase are in rad (not deg)
 
-    slope_1 = (ElectPhase[1] - ElectPhase[0]) / (Freq[1] - Freq[0]);
-    slope_2 = (ElectPhase[freq_step-1] - ElectPhase[freq_step-2]) / (Freq[freq_step-1] - Freq[freq_step-2]);
-
+    if (ch == -1){   
+        ElePhase_0 = ElectPhase[0];
+        ElePhase_1 = ElectPhase[1];
+        ElePhase_f0 = ElectPhase[freq_step-2];
+        ElePhase_f1 = ElectPhase[freq_step-1];
+    } else {
+        ElePhase_0 = ElectPhase_ch[ch][0];
+        ElePhase_1 = ElectPhase_ch[ch][1];
+        ElePhase_f0 = ElectPhase_ch[ch][freq_step-2];
+        ElePhase_f1 = ElectPhase_ch[ch][freq_step-1];
+    }
+    slope_1 = (ElePhase_1 - ElePhase_0) / (Freq[1] - Freq[0]);
+    slope_2 = (ElePhase_f1 - ElePhase_f0) / (Freq[freq_step-1] - Freq[freq_step-2]);
 
     // if freq is lower than freq_init
     if ( freq < freq_init ) {
 
-        phase = slope_1 * (freq - Freq[0]) + ElectPhase[0];
+        phase = slope_1 * (freq - Freq[0]) + ElePhase_0;
 
         if ( phase > PI ) {
             while ( phase > PI ) {
@@ -3358,7 +3382,7 @@ double Detector::GetElectPhase_1D( double freq ) {
     // if freq is higher than last freq
     else if ( freq > Freq[freq_step-1] ) {
 
-        phase = slope_2 * (freq - Freq[freq_step-1]) + ElectPhase[freq_step-1];
+        phase = slope_2 * (freq - Freq[freq_step-1]) + ElePhase_f1;
 
         if ( phase > PI ) {
             while ( phase > PI ) {
@@ -3374,26 +3398,40 @@ double Detector::GetElectPhase_1D( double freq ) {
 
     else {
 
+        double ElePhase_b0, ElePhase_b1, ElePhase_b2, ElePhase_b3;
+        if (ch == -1){
+            ElePhase_b0 = ElectPhase[bin-2];
+            ElePhase_b1 = ElectPhase[bin-1];
+            ElePhase_b2 = ElectPhase[bin];
+            ElePhase_b3 = ElectPhase[bin+1];
+        } else {
+            ElePhase_b0 = ElectPhase_ch[ch][bin-2];
+            ElePhase_b1 = ElectPhase_ch[ch][bin-1];
+            ElePhase_b2 = ElectPhase_ch[ch][bin];
+            ElePhase_b3 = ElectPhase_ch[ch][bin+1];
+        }
+
         // not at the first two bins
         if ( bin<freq_step-1 && bin>1 ) {
 
-            slope_t1 = (ElectPhase[bin-1] - ElectPhase[bin-2]) / (Freq[bin-1] - Freq[bin-2]);
-            slope_t2 = (ElectPhase[bin+1] - ElectPhase[bin]) / (Freq[bin+1] - Freq[bin]);
+            double slope_t1, slope_t2; // slope of pre, after the freq bin
+            slope_t1 = (ElePhase_b1 - ElePhase_b0) / (Freq[bin-1] - Freq[bin-2]);
+            slope_t2 = (ElePhase_b3 - ElePhase_b2) / (Freq[bin+1] - Freq[bin]);
 
             // down going case
-            if ( slope_t1 * slope_t2 > 0. && ElectPhase[bin] - ElectPhase[bin-1] > PI ) {
+            if ( slope_t1 * slope_t2 > 0. && ElePhase_b2 - ElePhase_b1 > PI ) {
 
-                phase = ElectPhase[bin-1] + (freq-Freq[bin-1])*(ElectPhase[bin]-2*PI-ElectPhase[bin-1])/(Freq[bin]-Freq[bin-1]);
+                phase = ElePhase_b1 + (freq-Freq[bin-1])*(ElePhase_b2-2*PI-ElePhase_b1)/(Freq[bin]-Freq[bin-1]);
             }
 
             // up going case
-            else if ( slope_t1 * slope_t2 > 0. && ElectPhase[bin] - ElectPhase[bin-1] < -PI ) {
-                phase = ElectPhase[bin-1] + (freq-Freq[bin-1])*(ElectPhase[bin]+2*PI-ElectPhase[bin-1])/(Freq[bin]-Freq[bin-1]);
+            else if ( slope_t1 * slope_t2 > 0. && ElePhase_b2 - ElePhase_b1 < -PI ) {
+                phase = ElePhase_b1 + (freq-Freq[bin-1])*(ElePhase_b2+2*PI-ElePhase_b1)/(Freq[bin]-Freq[bin-1]);
             }
 
             // neither case
             else {
-                phase = ElectPhase[bin-1] + (freq-Freq[bin-1])*(ElectPhase[bin]-ElectPhase[bin-1])/(Freq[bin]-Freq[bin-1]);
+                phase = ElePhase_b1 + (freq-Freq[bin-1])*(ElePhase_b2-ElePhase_b1)/(Freq[bin]-Freq[bin-1]);
             }
 
             // if outside the range, put inside
@@ -3411,7 +3449,7 @@ double Detector::GetElectPhase_1D( double freq ) {
         }// not first two bins
 
         else {
-            phase = ElectPhase[bin-1] + (freq-Freq[bin-1])*(ElectPhase[bin]-ElectPhase[bin-1])/(Freq[bin]-Freq[bin-1]);
+            phase = ElePhase_b1 + (freq-Freq[bin-1])*(ElePhase_b2-ElePhase_b1)/(Freq[bin]-Freq[bin-1]);
         }
 
         // if outside the range, put inside
@@ -3427,11 +3465,8 @@ double Detector::GetElectPhase_1D( double freq ) {
         }
 
     } // not outside the Freq[] range
-    
-
-
+ 
     return phase;
-
 
 }
 

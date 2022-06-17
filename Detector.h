@@ -262,6 +262,11 @@ class Detector {
         vector <double> ElectGain_NFOUR;   // Elect gain (unitless) for NFOUR bin array
         vector <double> ElectPhase_NFOUR;   // Elect phase (rad) for NFOUR bin array
 
+        //! electric chain for individual channels, 2022-06-17 -MK-
+        void ReadElectChain_ch(string filename, Settings *settings1);
+        void ReadElectChain_Phase_ch(string filename, Settings *settings1);        
+        double ElectGain_ch[16][freq_step_max];   // Elect chain gain (unitless) amplitude for Detector freq bin array
+        double ElectPhase_ch[16][freq_step_max];   // Elect chain gain (unitless) phase for Detector freq bin array
 
 
         void ReadGainOffset_TestBed(string filename, Settings *settings1);
@@ -359,10 +364,9 @@ class Detector {
         double GetElectGain(int bin) { return ElectGain[bin]; }   // same bin with Vgain, Hgain
         double GetElectGain_databin(int bin) { return ElectGain_databin[bin]; }   // bin for FFT
         double GetElectGain_NFOUR(int bin) { return ElectGain_NFOUR[bin]; }   // bin for FFT
-        double GetElectGain_1D_OutZero(double freq);
-        double GetElectPhase_1D(double freq);
-
-
+        //! added 'int ch' option to use electric chain for individual channels, 2022-06-17 -MK-
+        double GetElectGain_1D_OutZero(double freq, int ch);
+        double GetElectPhase_1D(double freq, int ch);
 
         double GetRFCMGain(int ch, int bin) { return RFCM_TB_ch[ch][bin]; }   // same bin with Vgain, Hgain
         double GetRFCMGain_databin(int ch, int bin) { return RFCM_TB_databin_ch[ch][bin]; }   // bin for FFT
@@ -433,8 +437,6 @@ class Detector {
         void ReadRFCM_New(Settings *settings1);    // get filter vector array with new DATA_BIN_SIZE 
 
         void ReadRayleigh_New(Settings *settings1); // get Rayleigh fit array with new DATA_BIN_SIZE
-
-
     
 //    vector < vector < vector < int > > > ChannelfromStringAntenna;
 //    void SetChannelStringAntennaMap();

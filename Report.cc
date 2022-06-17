@@ -1047,17 +1047,16 @@ void Report::Connect_Interaction_Detector (Event *event, Detector *detector, Ray
                                                    }
 
 
-                                                   //
-                                                   // apply entire elect chain gain, phase
-                                                   //
-                                                   if ( n > 0 ) {
-                                                       ApplyElect_Tdomain( freq_tmp*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1], settings1 );
-                                                   }
-                                                   else {
-                                                       ApplyElect_Tdomain_FirstTwo( freq_tmp*1.e-6, freq_lastbin*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1] );
-                                                   }
-
-
+                                                /*!
+                                                    apply entire elect chain gain, phase
+                                                    added option for the custom electric grain, which has a difference in each channel, 2022-06-17 -MK-
+                                                */
+                                                int ch = settings1->CUSTOM_ELECTRONICS==0 || settings1->CUSTOM_ELECTRONICS==1 ? -1 : j*4+k;
+                                                if ( n > 0 ) {
+                                                    ApplyElect_Tdomain( ch, freq_tmp*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1], settings1 );
+                                                } else {
+                                                    ApplyElect_Tdomain_FirstTwo( ch, freq_tmp*1.e-6, freq_lastbin*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1] );
+                                                }
 
                                                }// end for freq bin
 
@@ -1347,17 +1346,16 @@ void Report::Connect_Interaction_Detector (Event *event, Detector *detector, Ray
 					     ApplyAntFactors_Tdomain_FirstTwo( heff, heff_lastbin, n_trg_pokey, n_trg_slappy, Pol_vector, detector->stations[i].strings[j].antennas[k].type, Pol_factor, V_forfft[2*n], V_forfft[2*n+1], antenna_theta, antenna_phi );
 					   }
 					   
-					   //
-					   // apply entire elect chain gain, phase
-					   //
-					   if ( n > 0 ) {
-					     ApplyElect_Tdomain( freq_tmp*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1], settings1 );
-					   }
-					   else {
-					     ApplyElect_Tdomain_FirstTwo( freq_tmp*1.e-6, freq_lastbin*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1] );
-					   }
-					   
-					   
+                        /*!
+                            apply entire elect chain gain, phase
+                            added option for the custom electric grain, which has a difference in each channel, 2022-06-17 -MK-
+                        */
+                        int ch = settings1->CUSTOM_ELECTRONICS==0 || settings1->CUSTOM_ELECTRONICS==1 ? -1 : j*4+k;
+                        if ( n > 0 ) {
+                            ApplyElect_Tdomain( ch, freq_tmp*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1], settings1 );
+                        } else {
+                            ApplyElect_Tdomain_FirstTwo( ch, freq_tmp*1.e-6, freq_lastbin*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1] );
+                        }                
 					   
 					 }// end for freq bin
 					 
@@ -1686,16 +1684,17 @@ void Report::Connect_Interaction_Detector (Event *event, Detector *detector, Ray
 					     ApplyAntFactors_Tdomain_FirstTwo( heff, heff_lastbin, n_trg_pokey, n_trg_slappy, Pol_vector, detector->stations[i].strings[j].antennas[k].type, Pol_factor, V_forfft[2*n], V_forfft[2*n+1], antenna_theta, antenna_phi );
 					   }
 					   
-					   //
-					   // apply entire elect chain gain, phase
-					   //
-					   if ( n > 0 ) {
-					     ApplyElect_Tdomain( freq_tmp*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1], settings1 );
-					   }
-					   else {
-					     ApplyElect_Tdomain_FirstTwo( freq_tmp*1.e-6, freq_lastbin*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1] );
-					   }
-					   
+                        /*!
+                            apply entire elect chain gain, phase
+                            added option for the custom electric grain, which has a difference in each channel, 2022-06-17 -MK-
+                        */
+                        int ch = settings1->CUSTOM_ELECTRONICS==0 || settings1->CUSTOM_ELECTRONICS==1 ? -1 : j*4+k;
+                        if ( n > 0 ) {
+                            ApplyElect_Tdomain( ch, freq_tmp*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1], settings1 );
+                        } else {
+                            ApplyElect_Tdomain_FirstTwo( ch, freq_tmp*1.e-6, freq_lastbin*1.e-6, detector, V_forfft[2*n], V_forfft[2*n+1] );
+                        } 
+
 					   
 					   
 					 }// end for freq bin
@@ -1890,7 +1889,9 @@ void Report::Connect_Interaction_Detector (Event *event, Detector *detector, Ray
                    detector->ReadPreamp_New(settings1);
                    detector->ReadFOAM_New(settings1);
 
-                   detector->ReadElectChain_New(settings1);
+                    if (settings1->CUSTOM_ELECTRONICS==0 or settings1->CUSTOM_ELECTRONICS==1){ 
+                        detector->ReadElectChain_New(settings1); ///< Not sure why this is needed...
+                    }
 
 
 
@@ -1903,6 +1904,13 @@ void Report::Connect_Interaction_Detector (Event *event, Detector *detector, Ray
 //                   if ( settings1->NOISE==1 && settings1->DETECTOR==4) {
 //                       detector->ReadRayleigh_Station(settings1);
 //                   }
+
+                   
+
+                    //! reset rayleigh values from actual deployed station, 2022-06-17 -MK-                     
+                    if ( settings1->NOISE==2) {
+                        detector->ReadRayleigh_New(settings1);
+                    }
                    
                    
                    // reset Trigger class noise temp values
@@ -4489,7 +4497,7 @@ void Report::ApplyFilter_OutZero (double freq, Detector *detector, double &vmmhz
 }
 
 
-void Report::ApplyElect_Tdomain(double freq, Detector *detector, double &vm_real, double &vm_img, Settings *settings1) {  // read elect chain gain (unitless), phase (rad) and apply to V/m
+void Report::ApplyElect_Tdomain(int ch, double freq, Detector *detector, double &vm_real, double &vm_img, Settings *settings1) {  // read elect chain gain (unitless), phase (rad) and apply to V/m
 
     if ( settings1->PHASE_SKIP_MODE == 0 ) {
 
@@ -4513,39 +4521,31 @@ void Report::ApplyElect_Tdomain(double freq, Detector *detector, double &vm_real
         }
 
         // V amplitude
-        double v_amp  = sqrt(vm_real*vm_real + vm_img*vm_img) * detector->GetElectGain_1D_OutZero( freq ); // apply gain (unitless) to amplitude
+        double v_amp  = sqrt(vm_real*vm_real + vm_img*vm_img) * detector->GetElectGain_1D_OutZero(freq, ch); // apply gain (unitless) to amplitude
 
         // real, img terms with phase shift
-        //vm_real = v_amp * cos( phase_current + detector->GetElectPhase_1D(freq) );
-        //vm_img = v_amp * sin( phase_current + detector->GetElectPhase_1D(freq) );
+        //vm_real = v_amp * cos( phase_current + detector->GetElectPhase_1D(freq, ch) );
+        //vm_img = v_amp * sin( phase_current + detector->GetElectPhase_1D(freq, ch) );
 
-        vm_real = v_amp * cos( phase_current - detector->GetElectPhase_1D(freq) );
-        vm_img = v_amp * sin( phase_current - detector->GetElectPhase_1D(freq) );
+        vm_real = v_amp * cos( phase_current - detector->GetElectPhase_1D(freq, ch) );
+        vm_img = v_amp * sin( phase_current - detector->GetElectPhase_1D(freq, ch) );
     }
 
     else {
 
-        vm_real = vm_real * detector->GetElectGain_1D_OutZero( freq ); // only amplitude
+        vm_real = vm_real * detector->GetElectGain_1D_OutZero(freq, ch); // only amplitude
 
-        vm_img = vm_img * detector->GetElectGain_1D_OutZero( freq ); // only amplitude
+        vm_img = vm_img * detector->GetElectGain_1D_OutZero(freq, ch); // only amplitude
     }
 
 }
 
+void Report::ApplyElect_Tdomain_FirstTwo(int ch, double freq0, double freq1, Detector *detector, double &vm_bin0, double &vm_bin1) {  // read elect chain gain (unitless), phase (rad) and apply to V/m
 
-
-
-void Report::ApplyElect_Tdomain_FirstTwo(double freq0, double freq1, Detector *detector, double &vm_bin0, double &vm_bin1) {  // read elect chain gain (unitless), phase (rad) and apply to V/m
-
-    vm_bin0 = vm_bin0 * detector->GetElectGain_1D_OutZero( freq0 );
-    vm_bin1 = vm_bin1 * detector->GetElectGain_1D_OutZero( freq1 );
+    vm_bin0 = vm_bin0 * detector->GetElectGain_1D_OutZero(freq0, ch);
+    vm_bin1 = vm_bin1 * detector->GetElectGain_1D_OutZero(freq1, ch);
 
 }
-
-
-
-
-
 
 
 void Report::ApplyPreamp_NFOUR (int bin_n, Detector *detector, double &vmmhz) {  // read filter gain in dB and apply unitless gain to vmmhz
@@ -4915,6 +4915,42 @@ void Report::GetNoiseWaveforms_ch(Settings *settings1, Detector *detector, doubl
         }
         */
     }
+
+    //! use Rayleigh dist. Imported from https://github.com/toej93/AraSim_noise_calib, 2022-06-17 -MK-
+    else if (settings1->NOISE == 2) { 
+
+        Vfft_noise_after.clear();  ///< remove previous Vfft_noise values
+        Vfft_noise_before.clear();  ///< remove previous Vfft_noise values
+
+        double V_tmp; ///< copy original flat H_n [V] value
+        double current_amplitude, current_phase;
+
+        GetNoisePhase(settings1); ///< get random phase for noise
+        for (int k=0; k<settings1->DATA_BIN_SIZE/2; k++) {
+            current_phase = noise_phase[k];
+            V_tmp = detector->GetRayleighFit_databin(ch, k) * sqrt( (double)settings1->DATA_BIN_SIZE /(double)(settings1->NFOUR/2) );
+            Vfft_noise_before.push_back( V_tmp );
+
+            Tools::get_random_rician( 0., 0., V_tmp, current_amplitude, current_phase);    ///< use real value array value, extra 1/1.177 to make total power same with "before random_rician".
+
+            //! vnoise is currently noise spectrum (before fft, unit : V)
+            vnoise[2 * k] = (current_amplitude) * cos(noise_phase[k]);
+            vnoise[2 * k + 1] = (current_amplitude) * sin(noise_phase[k]);
+
+            Vfft_noise_after.push_back( vnoise[2*k] );
+            Vfft_noise_after.push_back( vnoise[2*k+1] );
+
+            //! inverse FFT normalization factor!
+            vnoise[2 * k] *= 2./((double)settings1->DATA_BIN_SIZE);
+            vnoise[2 * k + 1] *= 2./((double)settings1->DATA_BIN_SIZE);
+
+        }
+
+        //! now vnoise is time domain waveform
+        Tools::realft( vnoise, -1, settings1->DATA_BIN_SIZE);
+
+    }
+        
 
     else {  // currently there are no more options!
         cout<<"no noise option for NOISE = "<<settings1->NOISE<<endl;
