@@ -4524,9 +4524,6 @@ void Report::ApplyElect_Tdomain(int ch, double freq, Detector *detector, double 
         double v_amp  = sqrt(vm_real*vm_real + vm_img*vm_img) * detector->GetElectGain_1D_OutZero(freq, ch); // apply gain (unitless) to amplitude
 
         // real, img terms with phase shift
-        //vm_real = v_amp * cos( phase_current + detector->GetElectPhase_1D(freq, ch) );
-        //vm_img = v_amp * sin( phase_current + detector->GetElectPhase_1D(freq, ch) );
-
         vm_real = v_amp * cos( phase_current - detector->GetElectPhase_1D(freq, ch) );
         vm_img = v_amp * sin( phase_current - detector->GetElectPhase_1D(freq, ch) );
     }
