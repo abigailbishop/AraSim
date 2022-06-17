@@ -2147,10 +2147,13 @@ Detector::Detector(Settings *settings1, IceModel *icesurface, string setupfile) 
             cout<<"     Reading custom electronics response"<<endl;
              ReadElectChain("./data/custom_electronics.txt", settings1);
         }
+        /*!
+            electric chain from actual deployed station
+        */
         else if (settings1->CUSTOM_ELECTRONICS==2){ ///< electric chain for individual channels, 2022-06-17 -MK-
             cout<<"     Reading in-situ based electronics response"<<endl;       
-            string rayl_filepath = "data/In_situ_Electronics_Gain_A"+settings1->DETECTOR_STATION+"_C"+settings1->DETECTOR_STATION_LIVETIME_CONFIG+".txt"
- 
+            string ele_filepath = "./data/In_situ_Electronics_A"+settings1->DETECTOR_STATION+"_C"+settings1->DETECTOR_STATION_LIVETIME_CONFIG+".txt"
+            ReadElectChain_ch(ele_filepath, settings1);
         }
 	    cout<<"done read elect chain"<<endl;
     
@@ -4364,10 +4367,74 @@ void Detector::ReadElectChain_New(Settings *settings1) {    // will return gain 
 
 }
 
+/*!
+    new loading function for an electric gain and phase table that includes multiple channels, 2022-06-17 -MK-
+    table shape should be 2 dimension (cols : number of frequencies, rows : frequency + number of gain and pahse for each channels -> 1 + 16 * 2 = 33)
+    The gain and phase will be stored in ElectGain_ch and ElectPhase_ch
+    function structure is from Detector::ReadFOAM() function
+*/
+/*!
+    \param string electric gain table name
+    \param settings1 setting class
+    \return void
+*/
+inline void Detector::ReadElectChain_ch(string filename, Settings *settings1) {
 
+    ifstream Elect( filename.c_str() );
 
+    string line;
 
+    int N=0;
 
+    vector <double> col_val;
+    vector< vector<double> > all_chElect;
+
+    if ( Elect.is_open() ) {
+        while (Elect.good() ) {
+
+            getline (Elect, line);
+
+            istringstream iss(line);
+
+            while( iss )
+            {
+                string sub;
+                iss >> sub;
+                col_val.push_back( atof(sub.c_str()) );
+            }
+
+            all_chElect.push_back( col_val );
+            col_val.clear();
+
+            N++;
+
+        }
+        Elect.close();
+
+    }
+    else cout<<"Elect file can not opened!!"<<endl;
+
+    double xfreq[N], ygain[N], ypahse[N];  // need array for Tools::SimpleLinearInterpolation
+
+    int ch_no = 16;
+    cerr << "The number of channels: " << ch_no << endl;
+
+    for (int i=0;i<N;i++) { // copy values
+        xfreq[i] = all_chElect[i][0];
+    }
+
+    // now loop over channels and do interpolation
+    for (int ch=0; ch<ch_no; ch++) {
+        for (int i=0;i<N;i++) {
+            ygain[i] = (all_chElect[i][2*ch+1]);
+            yphase[i] = (all_chElect[i][2*ch+2]);
+        }
+
+        Tools::SimpleLinearInterpolation( N-1, xfreq, ygain, freq_step, Freq, ElectGain_ch[ch] );
+        Tools::SimpleLinearInterpolation( N-1, xfreq, yphase, freq_step, Freq, ElectPhase_ch[ch] );
+
+    }
+}
 
 inline void Detector::ReadGainOffset_TestBed(string filename, Settings *settings1) {    // will return gain offset (unit in voltage) for different chs
 

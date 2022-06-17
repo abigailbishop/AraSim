@@ -264,7 +264,6 @@ class Detector {
 
         //! electric chain for individual channels, 2022-06-17 -MK-
         void ReadElectChain_ch(string filename, Settings *settings1);
-        void ReadElectChain_Phase_ch(string filename, Settings *settings1);        
         double ElectGain_ch[16][freq_step_max];   // Elect chain gain (unitless) amplitude for Detector freq bin array
         double ElectPhase_ch[16][freq_step_max];   // Elect chain gain (unitless) phase for Detector freq bin array
 
