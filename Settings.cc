@@ -82,6 +82,8 @@ outputdir="outputs"; // directory where outputs go
 
   DETECTOR_STATION=-1; // initiate this to negative -1, so it does nothing by default
 
+  DETECTOR_STATION_LIVETIME_CONFIG=0; ///< temperaily use this A2/3 diffuse option for in-situ noise model and signal chain gain, 2022-06-17 -MK-
+
   INTERACTION_MODE=1;   //PickNear mode (0: Aeff mode using sphere surface around station, 1: Veff mode using cylinder volume around station)
 
   POSNU_RADIUS=3000;    //radius for PickNear method
@@ -351,6 +353,9 @@ void Settings::ReadFile(string setupfile) {
               }
               else if (label == "DETECTOR_STATION") {
                   DETECTOR_STATION = atof( line.substr(line.find_first_of("=") + 1).c_str() );
+              }
+              else if (label == "DETECTOR_STATION_LIVETIME_CONFIG") {
+                  DETECTOR_STATION_LIVETIME_CONFIG = atof( line.substr(line.find_first_of("=") + 1).c_str() );
               }
               else if (label == "INTERACTION_MODE") {
                   INTERACTION_MODE = atof( line.substr(line.find_first_of("=") + 1).c_str() );
@@ -994,6 +999,13 @@ int Settings::CheckCompatibilitiesSettings() {
     num_err++;
    }
 
+    //! Check DETECTOR_STATION and DETECTOR_STATION_LIVETIME_CONFIG is specified when DETECTOR = 4 and (CUSTOM_ELECTRONICS = 2 or NOISE = 2), 2022-06-17 -MK-
+    if (DETECTOR == 4 && (CUSTOM_ELECTRONICS==2 || NOISE==2)){
+        if ((DETECTOR_STATION != 2 && DETECTOR_STATION != 3) || DETECTOR_STATION_LIVETIME_CONFIG == 0){ //! only allow A2/3 for now
+            cerr << "DETECTOR_STATION and DETECTOR_STATION_LIVETIME_CONFIG need to be specified when CUSTOM_ELECTRONICS==2 and NOISE==2 "<<endl;
+            num_err++;
+        }
+    }
 
     return num_err;
 

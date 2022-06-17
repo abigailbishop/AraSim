@@ -55,6 +55,8 @@ class Settings
 
 	int DETECTOR_STATION; // for DETECTOR=4, indicates the single station to be simulated
 	                      // 0 = testbed, 1 = A1, 2 = A2, 3 = A3
+    
+    int DETECTOR_STATION_LIVETIME_CONFIG; //default 0: no special config
 
 	int number_of_stations; // the number of stations to be used in the simulation
 
