@@ -3061,6 +3061,7 @@ void Report::rerun_event(Event *event, Detector *detector,
                         // apply the antenna factors (this will also apply the polarization)
                         // and the electronics response
                         double Pol_factor;
+                        int ch = settings->CUSTOM_ELECTRONICS==0 || settings->CUSTOM_ELECTRONICS==1 ? -1 : idx;
                         if(n>0){
                             ApplyAntFactors_Tdomain(
                                 phase, heff, n_trg_pokey, n_trg_slappy, Pol_vector, 
@@ -3068,7 +3069,7 @@ void Report::rerun_event(Event *event, Detector *detector,
                                 Pol_factor, V_forfft[2*n], V_forfft[2*n + 1],
                                 settings, antenna_theta, antenna_phi
                                 );
-                            ApplyElect_Tdomain(freq_tmp*1.e-6, detector,
+                            ApplyElect_Tdomain(ch, freq_tmp*1.e-6, detector,
                                 V_forfft[2*n], V_forfft[2*n + 1], settings
                                 );
                         }
@@ -3079,7 +3080,7 @@ void Report::rerun_event(Event *event, Detector *detector,
                                 Pol_factor, V_forfft[2*n], V_forfft[2*n + 1],
                                 antenna_theta, antenna_phi
                                 );
-                            ApplyElect_Tdomain_FirstTwo(freq_tmp*1.e-6,
+                            ApplyElect_Tdomain_FirstTwo(ch, freq_tmp*1.e-6,
                                 freq_lastbin*1.e-6, detector,
                                 V_forfft[2*n], V_forfft[2*n + 1]
                                 );

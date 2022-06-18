@@ -2079,17 +2079,6 @@ Detector::Detector(Settings *settings1, IceModel *icesurface, string setupfile) 
 	      }
 	    }
 
-        /*! 
-            load rayleigh fit and use it for noise generation, 2022-06-17 -MK-
-            barrowing testbed function
-            It needs to specify DETECTOR_STATION and DETECTOR_STATION_LIVETIME_CONFIG options
-        */
-        if (settings1->NOISE==2){
-            cout<<"     Reading rayleigh distribution"<<endl;
-            string rayl_filepath = "data/Rayleigh_A"+settings1->DETECTOR_STATION+"_C"+settings1->DETECTOR_STATION_LIVETIME_CONFIG+".csv"
-            ReadRayleighFit_TestBed(rayl_filepath, settings1);
-        }
-
 	    /*
         if (settings1->DETECTOR_STATION == 2){
             if ( settings1->NOISE==1) {
@@ -2134,6 +2123,20 @@ Detector::Detector(Settings *settings1, IceModel *icesurface, string setupfile) 
 	    //        }
         
         
+
+        /*!
+            load rayleigh fit and use it for noise generation, 2022-06-17 -MK-
+            barrowing testbed function
+            It needs to specify DETECTOR_STATION and DETECTOR_STATION_LIVETIME_CONFIG options
+        */
+        string st = to_string(settings1->DETECTOR_STATION);
+        string config = to_string(settings1->DETECTOR_STATION_LIVETIME_CONFIG);
+        if (settings1->NOISE==2){
+            string rayl_filepath = "data/Rayleigh_A"+st+"_C"+config+".csv";
+            cout<<"     Reading rayleigh distribution : "<< rayl_filepath <<endl;
+            ReadRayleighFit_TestBed(rayl_filepath, settings1);
+        }
+
             // read total elec. chain response file!!
 	    cout<<"start read elect chain"<<endl;
         if(settings1->CUSTOM_ELECTRONICS==0){
@@ -2151,8 +2154,8 @@ Detector::Detector(Settings *settings1, IceModel *icesurface, string setupfile) 
             electric chain from actual deployed station
         */
         else if (settings1->CUSTOM_ELECTRONICS==2){ ///< electric chain for individual channels, 2022-06-17 -MK-
-            cout<<"     Reading in-situ based electronics response"<<endl;       
-            string ele_filepath = "./data/In_situ_Electronics_A"+settings1->DETECTOR_STATION+"_C"+settings1->DETECTOR_STATION_LIVETIME_CONFIG+".txt"
+            string ele_filepath = "./data/In_situ_Electronics_A"+st+"_C"+config+".txt";
+            cout<<"     Reading in-situ based electronics response : "<< ele_filepath <<endl;       
             ReadElectChain_ch(ele_filepath, settings1);
         }
 	    cout<<"done read elect chain"<<endl;
@@ -4414,7 +4417,7 @@ inline void Detector::ReadElectChain_ch(string filename, Settings *settings1) {
     }
     else cout<<"Elect file can not opened!!"<<endl;
 
-    double xfreq[N], ygain[N], ypahse[N];  // need array for Tools::SimpleLinearInterpolation
+    double xfreq[N], ygain[N], yphase[N];  // need array for Tools::SimpleLinearInterpolation
 
     int ch_no = 16;
     cerr << "The number of channels: " << ch_no << endl;
