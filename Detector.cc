@@ -2132,7 +2132,7 @@ Detector::Detector(Settings *settings1, IceModel *icesurface, string setupfile) 
         string st = to_string(settings1->DETECTOR_STATION);
         string config = to_string(settings1->DETECTOR_STATION_LIVETIME_CONFIG);
         if (settings1->NOISE==2){
-            string rayl_filepath = "data/Rayleigh_A"+st+"_C"+config+".csv";
+            string rayl_filepath = "data/rayleigh_fits/Rayleigh_A"+st+"_C"+config+".csv";
             cout<<"     Reading rayleigh distribution : "<< rayl_filepath <<endl;
             ReadRayleighFit_TestBed(rayl_filepath, settings1);
         }
@@ -2154,7 +2154,7 @@ Detector::Detector(Settings *settings1, IceModel *icesurface, string setupfile) 
             electric chain from actual deployed station
         */
         else if (settings1->CUSTOM_ELECTRONICS==2){ ///< electric chain for individual channels, 2022-06-17 -MK-
-            string ele_filepath = "./data/In_situ_Electronics_A"+st+"_C"+config+".txt";
+            string ele_filepath = "./data/electronics_gains/In_situ_Electronics_A"+st+"_C"+config+".txt";
             cout<<"     Reading in-situ based electronics response : "<< ele_filepath <<endl;       
             ReadElectChain_ch(ele_filepath, settings1);
         }
