@@ -4924,6 +4924,15 @@ void Report::GetNoiseWaveforms_ch(Settings *settings1, Detector *detector, doubl
         We could use 2V for a unit of the Rayleigh table. But eventually, we need to use a number of bins (N) to make a noise pad, in which the length of WF is different from than data, to have the same amplitude
         If we use 2V/sqrt(Hz) as a unit of the table, we don't have to worry about the original Wf's number of bins
         We could use 2V*sqrt(N) for a unit of the Rayleigh table. But since 2V/sqrt(Hz) would be a more conventional term, I kept the unit and decided to remove the dt at the function to reduce confusion among user
+
+        previous procedure: V*NFOUR/2 * sqrt(noise_pad/(NFOUR/2)) * 2/noise_pad = 2*V*sqrt((NFOUR/2)/noise_pad). 
+            1) Unit of input table is not normalized 
+            2) Number of bins are must be same with NFOUR/2
+            3) get_random_rician step is in the middle of normalization
+        new procedure: 2*V*sqrt(N*dt) * 1/sqrt(dt) * 1/sqrt(noise_pad) = 2*V*sqrt(N/noise_pad)
+            1) Unit of input table is normalized
+            2) Number of bins are free from NFOUR/2
+            3) get_random_rician step are placed after normalization
     */
     else if (settings1->NOISE == 2) { 
 
