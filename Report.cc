@@ -4921,7 +4921,6 @@ void Report::GetNoiseWaveforms_ch(Settings *settings1, Detector *detector, doubl
         N is number of bins in time-domain
         df is frequency bin width
         Since individual WFs that we used for fitting can have a different length, we need to normalize them with 1/(N*sqrt(df)) before performing Rayleigh fitting
-        So, naturally unit of the fit parameter (sigma) would be 2V/sqrt(Hz)
         We could use H for a unit of the Rayleigh table. 
         But eventually, we need to use a number of bins (N) and frequency bin width (df) to make a noise pad, in which the length of WF is different from than data, to have the same amplitude
 
@@ -4929,7 +4928,7 @@ void Report::GetNoiseWaveforms_ch(Settings *settings1, Detector *detector, doubl
             1) Number of bins of H must be same with NFOUR/2
             2) df of H must be same with TIMESTEP
         new procedure: H/(N*sqrt(df)) * noise_pad*sqrt_df * 2/noise_pad
-            1) Unit of input table is normalized
+            1) Input table is now normalized
             2) Table is free from NFOUR/2 and TIMESTEP
     */
     else if (settings1->NOISE == 2) { 
