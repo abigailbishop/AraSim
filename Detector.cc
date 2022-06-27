@@ -4780,7 +4780,6 @@ inline void Detector::ReadRayleighFit_TestBed(string filename, Settings *setting
     int init = 1;
     int ch_loop = 0;
     
-    double dt_tmp;
     vector <double> xfreq_tmp;
     vector <vector <double> > fit_tmp; // 2d array for ch
 
@@ -4797,17 +4796,11 @@ inline void Detector::ReadRayleighFit_TestBed(string filename, Settings *setting
     if ( Rayleigh_file.is_open() ) {
         while (Rayleigh_file.good() ) {
             
-            if (init == 1) { // grab dt
-                getline (Rayleigh_file, line, ',');
-                getline (Rayleigh_file, line, '\n');
-                dt_tmp = atof( line.c_str() ); // dt
-                init++;
-            }
-            else if (init == 2) { // ok, skip second line
+            if (init == 1) { // ok, skip first line
                 getline (Rayleigh_file, line);
                 init++;
             }
-            else { // from third line, read
+            else { // from second line, read
 
 
                 getline (Rayleigh_file, line, ',');
@@ -4838,7 +4831,6 @@ inline void Detector::ReadRayleighFit_TestBed(string filename, Settings *setting
     
     else cout<<"Rayleigh file can not opened!!"<<endl;
 
-    Rayleigh_TB_databin_dt[0] = dt_tmp;
     int N = (int)xfreq_tmp.size() - 1;
     total_line = total_line - 1;
     ch_no = total_line / N;

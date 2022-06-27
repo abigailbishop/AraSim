@@ -4916,23 +4916,21 @@ void Report::GetNoiseWaveforms_ch(Settings *settings1, Detector *detector, doubl
 
     /*! 
         Use Rayleigh dist. Imported from https://github.com/toej93/AraSim_noise_calib, 2022-06-17 -MK-
-        Unit of the Rayleigh fit parameter (sigma) should be 2V/sqrt(Hz) or 2V*sqrt(Ndt)
-        Multiplication of 2 is considering symmetry since the input is real fft
-        1/sqrt(Hz) is the normalization factor of fft
-        Since individual WFs that we used for fitting can have a different length, we need to normalize them with 1/sqrt(Hz) before performing Rayleigh fitting
+        The Rayleigh sigam table value should be H/(N*sqrt(df))
+        H is numpy rfft or realft outputs
+        N is number of bins in time-domain
+        df is frequency bin width
+        Since individual WFs that we used for fitting can have a different length, we need to normalize them with 1/(N*sqrt(df)) before performing Rayleigh fitting
         So, naturally unit of the fit parameter (sigma) would be 2V/sqrt(Hz)
-        We could use 2V for a unit of the Rayleigh table. But eventually, we need to use a number of bins (N) to make a noise pad, in which the length of WF is different from than data, to have the same amplitude
-        If we use 2V/sqrt(Hz) as a unit of the table, we don't have to worry about the original Wf's number of bins
-        We could use 2V*sqrt(N) for a unit of the Rayleigh table. But since 2V/sqrt(Hz) would be a more conventional term, I kept the unit and decided to remove the dt at the function to reduce confusion among user
+        We could use H for a unit of the Rayleigh table. 
+        But eventually, we need to use a number of bins (N) and frequency bin width (df) to make a noise pad, in which the length of WF is different from than data, to have the same amplitude
 
-        previous procedure: V*NFOUR/2 * sqrt(noise_pad/(NFOUR/2)) * 2/noise_pad = 2*V*sqrt((NFOUR/2)/noise_pad). 
-            1) Unit of input table is not normalized 
-            2) Number of bins are must be same with NFOUR/2
-            3) get_random_rician step is in the middle of normalization
-        new procedure: 2*V*sqrt(N*dt) * 1/sqrt(dt) * 1/sqrt(noise_pad) = 2*V*sqrt(N/noise_pad)
+        previous procedure: H * sqrt(noise_pad/(NFOUR/2)) * 2/noise_pad 
+            1) Number of bins of H must be same with NFOUR/2
+            2) df of H must be same with TIMESTEP
+        new procedure: H/(N*sqrt(df)) * noise_pad*sqrt_df * 2/noise_pad
             1) Unit of input table is normalized
-            2) Number of bins are free from NFOUR/2
-            3) get_random_rician step are placed after normalization
+            2) Table is free from NFOUR/2 and TIMESTEP
     */
     else if (settings1->NOISE == 2) { 
 
@@ -4941,16 +4939,15 @@ void Report::GetNoiseWaveforms_ch(Settings *settings1, Detector *detector, doubl
 
         double V_tmp; ///< copy original flat H_n [V] value
         double current_amplitude, current_phase;
-        double dt = detector->GetRayleighFit_dt();
         double noise_pad = settings1->DATA_BIN_SIZE; ///< number of bins for long noise WF
+        double sqrt_df = 1. / sqrt(settings1->TIMESTEP * noise_pad);
 
         GetNoisePhase(settings1); ///< get random phase for noise
         for (int k = 0; k < noise_pad/2; k++) {
             current_phase = noise_phase[k];
             V_tmp = detector->GetRayleighFit_databin(ch, k);
-            V_tmp /= sqrt(dt); ///< convert 2*V*sqrt(N*dt) to 2*V*sqrt(N). We dont need the bin width correction in DFT
-            V_tmp /= sqrt(noise_pad); ///< correction factor for long noise WF. so that long noise WF also can have a same amplitude with data when arasim do inverse fft
-            //! at this point, amplitude of each bin must be 2*V*sqrt(N)/sqrt(noise_pad)
+            V_tmp *= noise_pad * sqrt_df; ///< correction factor for long noise WF. so that long noise WF also can have a same amplitude with data when arasim do inverse fft
+            //! at this point, amplitude of each bin must be H/(N*sqrt(df))*(noise_pad*sqrt_df)
             Vfft_noise_before.push_back( V_tmp );
 
             Tools::get_random_rician( 0., 0., V_tmp, current_amplitude, current_phase);
@@ -4959,8 +4956,12 @@ void Report::GetNoiseWaveforms_ch(Settings *settings1, Detector *detector, doubl
             vnoise[2 * k] = (current_amplitude) * cos(noise_phase[k]);
             vnoise[2 * k + 1] = (current_amplitude) * sin(noise_phase[k]);
 
-            Vfft_noise_after.push_back( vnoise[2*k] );
-            Vfft_noise_after.push_back( vnoise[2*k+1] );
+            Vfft_noise_after.push_back( vnoise[2 * k] );
+            Vfft_noise_after.push_back( vnoise[2 * k + 1] );
+
+            // inverse FFT normalization factor!
+            vnoise[2 * k] *= 2. / noise_pad;
+            vnoise[2 * k + 1] *= 2. / noise_pad;    
 
         }
 
