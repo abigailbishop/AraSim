@@ -1093,6 +1093,11 @@ Interaction::Interaction (double pnu, string nuflavor, int nu_nubar, int &n_inte
     }
     else if (settings1->CALPULSER_ON == 0){
         primary1->IsCalpulser = 0;
+        
+    if (settings1->PULSER_ON == 1){
+        primary1->IsPulser = 1;
+        PickExact(antarctica, detector, settings1, 47.18, -24.*PI/180., 34.*PI/180.);
+    }
 
     if (settings1->INTERACTION_MODE == 0) {    // for pickunbiased. posnu will be selected the sphere around the stations
         //Interaction::PickUnbiased( antarctica );

@@ -163,6 +163,8 @@ public:
 
 
     int IsCalpulser;
+    
+    int IsPulser;
 
         ClassDef(Primaries,1);
 

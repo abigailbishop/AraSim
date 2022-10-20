@@ -171,6 +171,8 @@ outputdir="outputs"; // directory where outputs go
  
     CALPULSER_ON=0; // default : calpulsers off
     
+    PULSER_ON=0; // default : pulser off **EXPERIMENTAL**
+    
     TESTBED_ON=0; // default : 0 stations[0] is ARA1 not Testbed
     
     READGEOM=0; // default : 0 : use idealized geometry and do not read in from sqlite database
@@ -445,6 +447,9 @@ void Settings::ReadFile(string setupfile) {
               }
               else if (label == "CALPULSER_ON") {
                   CALPULSER_ON = atof( line.substr(line.find_first_of("=") + 1).c_str() );
+              }
+              else if (label == "PULSER_ON") { //**EXPERIMENTAL**
+                  PULSER_ON = atof( line.substr(line.find_first_of("=") + 1).c_str() );
               }
               else if (label == "TESTBED_ON") {
                   TESTBED_ON = atoi( line.substr(line.find_first_of("=") + 1).c_str() );
@@ -1008,6 +1013,7 @@ int Settings::CheckCompatibilitiesSettings() {
    // check that USE_PARAM_RE_TTERM_TABLE is only used with SIMULATION_MODE==1
    if (USE_PARAM_RE_TTERM_TABLE==1 && SIMULATION_MODE!=1){
     cerr << "USE_PARAM_RE_TTERM_TABLE=0 doesn't work with SIMULATION_MODE!=1"<<endl;
+    cout << USE_PARAM_RE_TTERM_TABLE << ", " << SIMULATION_MODE << endl;
     num_err++;
    }
 

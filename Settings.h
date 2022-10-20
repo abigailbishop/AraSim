@@ -131,6 +131,8 @@ class Settings
         double RAYSOL_RANGE;    // direct distance limit to do raysolver. If distance between posnu and antenna is bigger than RAYSOL_RANGE, AraSim will not try RaySol for that event. Default : 3000 m
 
         int CALPULSER_ON; // 0: no calpulsers in event list, 1: only throws calpulser 1 events, 2: only throws calpulser 2 events, 3: throws both calpulser 1 and 2 events alternating between them, 4: throws calpulser 1 and 2 events integrated with the simulated data (not yet implemented)
+        
+        int PULSER_ON;  // **EXPERIMENTAL** Trying to implement pulser at SpiceCore location.
     
         int TESTBED_ON;
     
