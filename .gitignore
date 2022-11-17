@@ -7,6 +7,7 @@ AraSim
 *.ipynb
 *.ipynb_checkpoints
 outputs/
+outputs/*
 =======
 *.ipynb
 >>>>>>> parent of 0d5465e... Adding fixed pulser capability
