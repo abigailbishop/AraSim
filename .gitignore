@@ -3,5 +3,10 @@
 eventSimDict.C
 eventSimDict.h
 AraSim
+<<<<<<< HEAD
 *.ipynb
 *.ipynb_checkpoints
+outputs/
+=======
+*.ipynb
+>>>>>>> parent of 0d5465e... Adding fixed pulser capability

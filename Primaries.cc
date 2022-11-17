@@ -957,6 +957,29 @@ Interaction::Interaction(IceModel *antarctica, Detector *detector, Settings *set
       L0 = PickNear_Sphere (antarctica, detector, settings1);
       
     }
+    if (settings1->PULSER_ON == 1){
+        primary1->IsPulser = 1;
+        // primary1->clockAngle = 0*PI/180; //Radians
+        settings1->clockAngle = 0*PI/180; //Radians
+        double pulserPosition[] = { 12911.0232, 14927.2752, -1100 };
+        double a2Position[] =  { 10814.6088, 13828.4712, -179.933875 };
+        // double pulserPosition[] = { 12911.0232, 14927.2752, 1100 };
+        // double a2Position[] =  { 10814.6088, 13828.4712, 179.933875 };
+        double rotation = 126.773;
+        
+        double R = sqrt(pow(pulserPosition[0]-a2Position[0],2) + pow(pulserPosition[1]-a2Position[1],2));
+        double phi = (360-rotation+(atan2(pulserPosition[1]-a2Position[1], pulserPosition[0]-a2Position[0]))*180/PI)*PI/180;
+        double theta = -acos((a2Position[2] - pulserPosition[2])/R);
+        
+        // PickExact(antarctica, detector, settings1, R, theta, phi);
+        
+        settings1->POSNU_THETA = theta;
+        settings1->POSNU_PHI = phi;
+        settings1->POSNU_R = R;
+        
+        PickExact(antarctica, detector, settings1, settings1->POSNU_R, settings1->POSNU_THETA, settings1->POSNU_PHI);
+            
+    }
     else if (settings1->INTERACTION_MODE == 1) {   // for picknear. posnu will be only near by ARA core with cylinderical volume
       
       //Interaction::PickNear (antarctica, detector, settings1);
@@ -1093,11 +1116,32 @@ Interaction::Interaction (double pnu, string nuflavor, int nu_nubar, int &n_inte
     }
     else if (settings1->CALPULSER_ON == 0){
         primary1->IsCalpulser = 0;
+<<<<<<< HEAD
         
     if (settings1->PULSER_ON == 1){
         primary1->IsPulser = 1;
-        PickExact(antarctica, detector, settings1, 47.18, -24.*PI/180., 34.*PI/180.);
+        // primary1->clockAngle=0;
+        settings1->clockAngle=0;
+        double pulserPosition[] = { 12911.0232, 14927.2752, -1100 };
+        double a2Position[] =  { 10814.6088, 13828.4712, -179.933875 };
+        // double pulserPosition[] = { 12911.0232, 14927.2752, 1100 };
+        // double a2Position[] =  { 10814.6088, 13828.4712, 179.933875 };
+        double rotation = 126.773;
+        
+        double R = sqrt(pow(pulserPosition[0]-a2Position[0],2) + pow(pulserPosition[1]-a2Position[1],2));
+        double phi = (360-rotation+(atan2(pulserPosition[1]-a2Position[1], pulserPosition[0]-a2Position[0]))*180/PI)*PI/180;
+        double theta = -acos((a2Position[2] - pulserPosition[2])/R);
+        
+        // PickExact(antarctica, detector, settings1, R, theta, phi);
+        
+        settings1->POSNU_THETA = theta;
+        settings1->POSNU_PHI = phi;
+        settings1->POSNU_R = R;
+        
+        PickExact(antarctica, detector, settings1, settings1->POSNU_R, settings1->POSNU_THETA, settings1->POSNU_PHI);
     }
+=======
+>>>>>>> parent of 0d5465e... Adding fixed pulser capability
 
     if (settings1->INTERACTION_MODE == 0) {    // for pickunbiased. posnu will be selected the sphere around the stations
         //Interaction::PickUnbiased( antarctica );

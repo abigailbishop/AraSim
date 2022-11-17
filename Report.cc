@@ -21,6 +21,8 @@
 
 #include <cstdlib>
 
+#include "Primaries.h"
+
 ClassImp(Report);
 ClassImp(Antenna_r);
 ClassImp(Surface_antenna_r);
@@ -495,6 +497,10 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
 
                                 // calculate the polarization vector at the source
                                 Pol_vector = GetPolarization(event->Nu_Interaction[0].nnu, launch_vector);
+                                
+                                if (settings1->PULSER_ON == 1) {
+                                    Pol_vector = ( launch_vector.Cross(event->Nu_Interaction[0].posnu) ).Rotate(PI/2 + settings1->clockAngle, launch_vector);
+                                }
 
                                 icemodel->GetFresnel(ray_output[1][ray_sol_cnt],    // launch_angle
                                     ray_output[2][ray_sol_cnt], // rec_angle

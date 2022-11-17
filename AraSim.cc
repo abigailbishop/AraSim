@@ -82,6 +82,14 @@ int main(int argc, char **argv) {   // read setup.txt file
 
     settings1->ReadFile(setupfile);
     cout<<"Read "<<setupfile<<" file!"<<endl;
+    
+//     //Adding pulser calculations here - JCF 11/17/2022
+//     if (settings1->PULSER_ON == 1) {
+//         RaySolver *raysolverTemp = new RaySolver();
+//         raysolverTemp->Solve_Ray(event->Nu_Interaction[0].posnu, detector->stations[i].strings[j].antennas[k], icemodel, ray_output, settings1, RayStep);
+        
+//     }
+//     //End pulser calculations
 
     int settings_compatibility_error = settings1->CheckCompatibilitiesSettings();
     if (settings_compatibility_error > 0) {
