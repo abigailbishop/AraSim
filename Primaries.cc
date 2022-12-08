@@ -1116,7 +1116,7 @@ Interaction::Interaction (double pnu, string nuflavor, int nu_nubar, int &n_inte
     }
     else if (settings1->CALPULSER_ON == 0){
         primary1->IsCalpulser = 0;
-<<<<<<< HEAD
+// <<<<<<< HEAD
         
     if (settings1->PULSER_ON == 1){
         primary1->IsPulser = 1;
@@ -1140,8 +1140,8 @@ Interaction::Interaction (double pnu, string nuflavor, int nu_nubar, int &n_inte
         
         PickExact(antarctica, detector, settings1, settings1->POSNU_R, settings1->POSNU_THETA, settings1->POSNU_PHI);
     }
-=======
->>>>>>> parent of 0d5465e... Adding fixed pulser capability
+// =======
+// >>>>>>> parent of 0d5465e... Adding fixed pulser capability
 
     if (settings1->INTERACTION_MODE == 0) {    // for pickunbiased. posnu will be selected the sphere around the stations
         //Interaction::PickUnbiased( antarctica );

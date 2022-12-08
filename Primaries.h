@@ -163,12 +163,12 @@ public:
 
 
     int IsCalpulser;
-<<<<<<< HEAD
+// <<<<<<< HEAD
     
     int IsPulser;
     // double clockAngle;
-=======
->>>>>>> parent of 0d5465e... Adding fixed pulser capability
+// =======
+// >>>>>>> parent of 0d5465e... Adding fixed pulser capability
 
         ClassDef(Primaries,1);
 
