@@ -43,7 +43,7 @@ class Settings
         int CONSTANTICETHICKNESS; // set ice thickness to constant value
         int FIXEDELEVATION; // fix the elevation to the thickness of ice.
         int MOOREBAY; //1=use Moore's Bay measured ice field attenuation length for the west land, otherwise use South Pole data
-        int USE_ARA_ICEATTENU; // 0 : use old ice attenuation factor with one depth info, 1 : (default) use ARA measured ice attenuation factor with depth from ray steps
+        int USE_ARA_ICEATTENU; // 0 : use old ice attenuation factor with one depth info, 1 : (default) use ARA measured ice attenuation factor with depth from ray steps, 2: use frequency dependent model with depth from ray steps
 
 	int Z_THIS_TOLERANCE; // 0 : (default) use default 'requiredAccuracy' parameter for ray tracing, 1 : change 'requiredAccuracy' parameter by Z_TOLERANCE
 	
@@ -56,6 +56,8 @@ class Settings
 	int DETECTOR_STATION; // for DETECTOR=4, indicates the single station to be simulated
 	                      // 0 = testbed, 1 = A1, 2 = A2, 3 = A3
 
+        int DETECTOR_STATION_LIVETIME_CONFIG; // for real deep station, what livetime configuration are we using?
+
 	int number_of_stations; // the number of stations to be used in the simulation
 
         int INTERACTION_MODE;   // method to choose interaction point posnu. 0 : PickUnbiased, 1 : PickNear, 2 : PickExact, 3 : PickAboveIce
@@ -65,6 +67,8 @@ class Settings
         int WHICHPARAMETERIZATION;  //
 
         int SIMULATION_MODE;    // 0 : old freq domain mode, 1: new time domain mode
+
+        int USE_PARAM_RE_TTERM_TABLE; // 1 (default): use the table, 0: do not use the table (takes ~10x longer)
 
         int EVENT_TYPE;         // 0 : neutrino only events,  1 : blackhole evnet? ... etc
 
@@ -268,7 +272,7 @@ class Settings
 	//11 : Moore's Bay Model 2
 	//20 : Byrd (Ebimuna (1983))
 	//30 : Mizuho (Ebimuna (1983))
-
+	
 	int WAVEFORM_LENGTH; // the number of samples in the waveform length for V_mimic and UsefulAtriStationEvent, default: 64/2*20 = 640
 
 	int WAVEFORM_CENTER; // the relative location of the center of the write-out window with respect to the last triggered bin (which is laced at the center of the window by default), this effectively provides a global delay in the write-out window across all channels: positive values shift the write-out window to later times in the waveform, negative values shift the window to earlier times, default: 0
@@ -286,6 +290,10 @@ class Settings
 
 	int ANTENNA_MODE; // 0: old default antenna models bicone/rotated dipole
 	                   // 1: using different antenna response for the top Vpol antennas, otherwise same as old default
+                       // 2: use the ARIANNA wipld LPDA responses instead
+                       // 3: use the chiba xfdtd models (treats top and bottom as the same)
+                       // 4: use the chiba in-situ models (treats top and bottom as the same)
+                       // The related wiki page for antenna models description:http://ara.icecube.wisc.edu/wiki/index.php/Antenna_model
 
 	int APPLY_NOISE_FIGURE; // 0: do not apply new noise figure from Thomas Meures 2016
 	                        // 1: apply new noise figure to data

@@ -1333,7 +1333,6 @@ removed useless/problematic option in makefile
 added namespace definition in Tools.h
 
 ============================================================================
-<<<<<<< .working
 
 04/07/2017 Carl Pfendner:
 
@@ -1526,3 +1525,227 @@ Related documents in DocBD
 Part1:http://ara.physics.wisc.edu/docs/0021/002152/001/20200622_Arrival_Time_Delay_in_AraSim.pdf
 Part2:http://ara.physics.wisc.edu/docs/0021/002158/001/20200706_Arrival_Time_Delay_in_AraSim_part2.pdf
 Part3:http://ara.physics.wisc.edu/docs/0021/002161/001/20200713_Arrival_Time_Delay_in_AraSim_part3.pdf
+
+2020/10/22 Brian Clark
+Add an additional ice attenuation mode (settings1->USE_ARA_ICEATTENU == 2) which 
+will use the frequency dependent icemodel from Besson et al described here: https://icecube.wisc.edu/~araproject/radio/atten/.
+This required changes to Report and IceModel. In particulart two new functions IceModel:
+1. GetFreqDepIceAttenuLength
+2. temperature
+Also, change the attenuation calculation so that it computes the attenuation using the midpoint of the ray
+instead of the end of the ray, which gives a more accurate calculation for the attenuation length.
+
+============================================================================
+2020/11/03 Brian Clark
+This is a rather substantial overhaul of the way antennas are loaded in AraSim.
+
+First, I undid the change made on Jan 23 2020 which introduced the 
+ReadVgainSettings, ReadVgainTopSettings, and ReadHgainSettings.
+Instead, I developed a unified set of functions that always uses the settings object.
+Also, I eliminated a block functions that was repeated 4 times, and instead
+bundled them into a single ReadAllAntennaGains function. This make it much more modular.
+
+For better organization, I also moved all of the antenna gain files into a new data/antennas folder.
+
+Finally, I introduced, through ANTENNA_MODE=3, the Chiba XFDTD antenna models.
+
+============================================================================
+2020/11/04 Brian Clark
+
+Make a change to address an issue (see https://github.com/ara-software/AraSim/issues/28)
+where if a neutrino energy is drawn above the range where the cross-section parameterization
+is defined, the simulation just freezes. Now, the Event class will return
+an event without an interactions, and AraSim will not proceed in the absence of an interaction.
+Very verbose as well, which should hopefully reduce confusion.
+
+============================================================================
+2020/11/16 Brian Clark
+
+Add a new set of antenna files (_updated2020) which fix a problem where the files previously
+used by Thomas (_updated2016) labeled the transmission coefficient incorrectly as SWR.
+Using the formula reflection_coefficient = sqrt(1 - transmission_coefficient)
+and swr = (1+reflection_coefficient)/(1-reflection_coefficient),
+I converted the values in _updated2016 into *actual* SWR's in the _updated2016.
+
+I also updated the "read antenna" functions, and added a SWRtoTransCoeff helper
+function to convert between the now correct SWR values, and the transmission
+coefficients that are needed in order to do noise calculations.
+
+============================================================================
+ 2020/11/16 Brian Clark
+
+ This factorizes the calculation of the polarization factor into a calculatePolFactor function.
+ This removes a series of duplicated lines in the ApplyAntFactors* functions.
+
+ Also, this reduces the number of ApplyAntFactors_Tdomain functions. I have eliminated
+ the ApplyAntFactors_Tdomain_Transmitter function by instead passing a useInTransmitterMode
+ flag to the ApplyAntFactors_Tdomain function itself. This reduces the number of functions lying around.
+
+ Finally, it updates the way the polarization factor is calculated.
+ See this PR (https://github.com/ara-software/AraSim/issues/25)
+ and this talk from Ben Hokanson-Fasig (http://ara.physics.wisc.edu/cgi-bin/DocDB/ShowDocument?docid=1947).
+
+============================================================================
+
+2020/11/18 Myoungchul Kim
+
+Added the Chiba in-situ antenna model as a ANTENNA_MODE=4 option.
+Related documents in DocBD: http://ara.physics.wisc.edu/docs/0018/001838/001/AntennaModel_20190227.pdf
+
+============================================================================
+ 2020/11/24 Brian Clark
+
+Add a new interpolation function (SincInterpolation) to the Tools class.
+This method of interpolation is useful for preserving relative spectral power.
+Linear interpolation (the default currently used in AraSim) can artifact
+the spectrum of a signal at high frequencies. This requires Boost > 1.71.00 though!
+Boost is chosen to do the interpolation (instead of GSL, ROOT, etc.)
+because AraSim already has boost as a dependency, and boost has a nice interface
+to the sinc/Whittaker-Shannon method.
+as a dependency 
+
+=======
+2020/12/07 Brian Clark
+
+Update the GetAngleAnt function for a correct calculation of antenna_theta
+and antenna_phi. This fixes two things. 
+First, GetAngleAnt was not calculating antenna_phi correctly.
+Second, GetAngleAnt was calculating antenna_theta so that it indicated
+where the signal was  *going*. But antenna_theta needs to indicate where the signal
+*came from* in order to be used correctly in the new pol factor calculation (see above)
+and in the antenna gain calculation. This bug would so far have not impacted
+AraSim sensitivity estimates because the antennas are approximately
+azimuthally and zenithally symmetric.
+
+
+============================================================================
+2020/12/10 Brian Clark
+
+Add a new mode (USE_PARAM_RE_TTERM_TABLE=1) which allows the user to evaluate
+the Param_RE_TTerm using a lookup table w/ interpolation instead of computing
+it on the fly. This increases the speed of the shower integral by more than an order
+of magnitude.
+
+============================================================================
+2020/12/22 Myoungchul Kim
+
+Added the wiki page link for antenna models near ANTENNA_MODE option in Settings.h.
+Added the script that makes the Chiba in-situ antenna model in AraSim/data/antennas/ path.
+The related wiki page: http://ara.icecube.wisc.edu/wiki/index.php/Antenna_model
+
+============================================================================
+2021/01/23 Brian Clark
+
+Make a slight modification to the Solve_Ray function in RaySolver.cc.
+This ensures that the ray output results are always returned with the direct
+solution first and the refracted/reflected solutions second.
+Testing (on a few hundred events) suggested that direct solutions
+are always returned first anyway, but this guarantees it, which can be useful
+for debugging.
+
+=============================================================================
+2021/02/21 Yuchieh Ku
+Replaced the FFT function realft() in the Tools class. The previous realft() was from numerical recipes, it is replaced by a new function that uses FFTtools.h and fftw3.h. 
+Related documents in DocBD: http://ara.physics.wisc.edu/docs/0022/002291/001/FFT.pdf, 
+and http://ara.physics.wisc.edu/docs/0023/002313/001/FFTupdate.pdf
+
+=============================================================================
+2021/03/31 Myoungchul Kim
+
+Skipping attenuation calculation when the distance between two RaySteps is 0.
+It prevents adding '-nan' into the IceAttenFactor and deleting the E-field array by '-nan'.
+
+=============================================================================
+2021/04/01 Brian Clark
+
+Fix memory leak in the new FFT routines where the result of doFFT was not
+cleaned up correctly.
+
+============================================================================
+  2021/12/02 Myoungchul Kim
+
+In case, the vertex is generated very far from antennas (~12km), the refineRoot and evenmore_refineRoot
+function can't find the optimal launch angle that satisfying requiredAccuracy.
+In this case, the function executes the 'throw' command, and the simulation is aborted.
+In order to avoid the aborting simulation, I decided to command out the 'throw' and return the closet
+results (refine_result) for 2nd direct ray tracing.
+If the closet result(refine_result.second) is bigger than the missing_z from the 1st doTrace (results.front().miss),
+the finPaths function will return the '0 ray solution'.
+If the closet result(refine_result.second) is smaller than the missing_z from the 1st doTrace or requiredAccuracy,
+2nd direct ray tracing will try to find the solution with it (est.angle).
+The related talk: http://ara.physics.wisc.edu/docs/0022/002263/001/20201221_Raytracing_Bug.pdf
+
+============================================================================
+2022/07/01 Brian Clark
+
+This is a substantial cleanup and implementation of noise in the deep stations.
+In particular, it overhauls the process of loading the Rayleigh parameters
+(needed for noise generation), into AraSim for the deep station.
+It also introduces new and cleaned up versions of the code that interpolates
+the Rayleigh fits, and the code that generates noise waveforms.
+
+So, there is substantial updates and cleanup to the Detector and Report classes.
+In particular, there is an introduction of the Detector::ReadRayleighFit_DeepStation function and
+the Detector::GetRayleighFitVector_databin function.
+The Report::GetNoiseWaveforms_ch has been updated to support deep stations.
+
+I left the Testbed mode completely alone.
+
+A detailed summary of how the new and updated version works is available
+on DocDB: https://aradocs.wipac.wisc.edu/cgi-bin/DocDB/ShowDocument?docid=2620
+
+==============================================================================
+2022/07/28 Myoungchul Kim
+
+When simulation sets the vertex position of each event, It needs to be added 10km in each XY coordinate to avoid the intersection of bins of the earth model.
+In Interaction::PickNear_Sphere, which is setting vertex positions, the 'adding 10 km' is only happening if DETECTOR setting is 1~3. 
+So, if we use DETECTOR=4, It will do nothing
+I added 'detector->Get_mode() == 4' option in the Interaction::PickNear_Sphere. 
+So that user can use effective area (INTERACTION_MODE=0) mode with deployed station mode (DETECTOR=4)
+
+==============================================================================
+
+2022/11/01 Alex Machtay (machtay.1@osu.edu)
+
+The PickExact mode used in Primaries.cc used a different convention from the rest of AraSim. 
+Instead of the neutrino trajectory being determined by an azimuthal angle measured 
+from the positive x-axis and a theta angle measured from the positive z-axis, 
+the azimuthal angle was measured from the positive x-axis (consistent with the rest of AraSim) 
+and the zenith angle was measured from the x-y plane (inconsistent with the rest of AraSim). 
+So the zenith angle went from [-pi/2, pi/2], with negative values below the x-y plane 
+and positive values above. AraSim's convention is to measure the 
+zenith angle from the positive z-axis, in the range [0, pi]. 
+
+Here is the old way of setting the trajectory in PickExact (line 2406 in Primaries.cc):
+
+X = avgX + thisR*cos(thisPhi)*cos(thisTheta);
+Y = avgY + thisR*sin(thisPhi)*cos(thisTheta);
+Z = avgZ + thisR*sin(thisTheta);
+
+Here is the updated method:
+
+X = avgX + thisR*cos(thisPhi)*sin(thisTheta);
+Y = avgY + thisR*sin(thisPhi)*sin(thisTheta);
+Z = avgZ + thisR*cos(thisTheta);
+
+Also updated the content of eventReadIn.txt so that it is consistent
+with this convention.
+
+==============================================================================
+
+2023/02/28 Brian Clark
+
+Changes were made to the Detector and Settings classes to enable
+AraSim to simulate A4 and A5, the fourth and fifth ARA stations.
+
+In Settings, this required altering CheckCompatibilitiesSettings
+to allow for detector livetime configs to work for stations larger than A2 an A3.
+
+In Detector.cc, the really important change was updating the function
+SetupInstalledStations to have the A4 and A5 geometry information.
+I also linted the main Detector function to fix a bunch of tabbing issues.
+This improved readability.
+
+There's also a minor update to the Deep Station rayleigh reader
+to make it more robust against the presence of blank lines.
+

@@ -80,6 +80,9 @@ outputdir="outputs"; // directory where outputs go
 
   DETECTOR=1;   //ARA layout with small number of stations
 
+  DETECTOR_STATION=-1; // initiate this to negative -1, so it does nothing by default
+  DETECTOR_STATION_LIVETIME_CONFIG=-1; // intiative this to negative -1, so it does nothing by default
+
   INTERACTION_MODE=1;   //PickNear mode (0: Aeff mode using sphere surface around station, 1: Veff mode using cylinder volume around station)
 
   POSNU_RADIUS=3000;    //radius for PickNear method
@@ -87,6 +90,8 @@ outputdir="outputs"; // directory where outputs go
   WHICHPARAMETERIZATION=0;  //
 
   SIMULATION_MODE=1;    // default freq domain simulation
+
+  USE_PARAM_RE_TTERM_TABLE=1; // default: use the interpolation table to get Param_RE_TTerm
 
   EVENT_TYPE=0;         // default neutrino only events
 
@@ -176,7 +181,7 @@ outputdir="outputs"; // directory where outputs go
     
     USE_INSTALLED_TRIGGER_SETTINGS = 0; // default : 0 - use idealized settings for the trigger
     
-    NUM_INSTALLED_STATIONS = 4;
+    NUM_INSTALLED_STATIONS = 6;
 
     CALPUL_OFFCONE_ANGLE = 35.;
 
@@ -348,6 +353,9 @@ void Settings::ReadFile(string setupfile) {
               else if (label == "DETECTOR_STATION") {
                   DETECTOR_STATION = atof( line.substr(line.find_first_of("=") + 1).c_str() );
               }
+              else if (label == "DETECTOR_STATION_LIVETIME_CONFIG") {
+                  DETECTOR_STATION_LIVETIME_CONFIG = atof( line.substr(line.find_first_of("=") + 1).c_str() );
+              }
               else if (label == "INTERACTION_MODE") {
                   INTERACTION_MODE = atof( line.substr(line.find_first_of("=") + 1).c_str() );
               }
@@ -359,6 +367,9 @@ void Settings::ReadFile(string setupfile) {
               }
               else if (label == "SIMULATION_MODE") {
                   SIMULATION_MODE = atof( line.substr(line.find_first_of("=") + 1).c_str() );
+              }
+              else if (label == "USE_PARAM_RE_TTERM_TABLE") {
+                  USE_PARAM_RE_TTERM_TABLE = atof( line.substr(line.find_first_of("=") + 1).c_str() );
               }
               else if (label == "EVENT_TYPE") {
                   EVENT_TYPE = atof( line.substr(line.find_first_of("=") + 1).c_str() );
@@ -903,11 +914,10 @@ int Settings::CheckCompatibilitiesSettings() {
         num_err++;
     }
 
-    //if (NOISE==1 && DETECTOR!=3) {
-    if (NOISE==1 && DETECTOR!=3 && TRIG_ONLY_LOW_CH_ON!=1) {
-        cerr<<"NOISE=1 only works with DETECTOR=3 or TRIG_ONLY_LOW_CH_ON=1"<<endl;
-        num_err++;
-    }
+    // if (NOISE==1 && DETECTOR!=3 && TRIG_ONLY_LOW_CH_ON!=1) {
+    //     cerr<<"NOISE=1 only works with DETECTOR=3 or TRIG_ONLY_LOW_CH_ON=1"<<endl;
+    //     num_err++;
+    // }
 
     if (NOISE==1 && USE_TESTBED_RFCM_ON==1) {
         cerr<<"NOISE=1 only works with USE_TESTBED_RFCM_ON=0!"<<endl;
@@ -925,14 +935,13 @@ int Settings::CheckCompatibilitiesSettings() {
         cerr<<"TRIG_ONLY_LOW_CH_ON=1 doesn't work with DETECTOR=3!"<<endl;
         num_err++;
     }
-
     if (DATA_LIKE_OUTPUT != 0 && (DETECTOR==0 || DETECTOR==1 || DETECTOR==2)) {
         cerr<<"DATA_LIKE_OUTPUT=1,2 doesn't work with DETECTOR=0,1,2"<<endl;
         cerr<<"DATA_LIKE_OUTPUT controls data-like output into UsefulAtriStationEvent format; without a real station selected (using DETECTOR==3,4), the mapping to the data-like output will not function correctly"<<endl;
         num_err++;
     }
 
-    if (DATA_LIKE_OUTPUT != 0 && (DETECTOR_STATION>3)) {
+    if (DATA_LIKE_OUTPUT != 0 && (DETECTOR_STATION>5)) {
         cerr<<"DATA_LIKE_OUTPUT=1,2 doesn't work with DETECTOR_STATION>3"<<endl;
         cerr<<"DATA_LIKE_OUTPUT controls data-like output into UsefulAtriStationEvent format; without a real station selected (using DETECTOR==3,4), the mapping to the data-like output will not function correctly"<<endl;
         num_err++;
@@ -948,22 +957,21 @@ int Settings::CheckCompatibilitiesSettings() {
     // This is for installed stations
     if (DETECTOR == 4 ) {
       if (ARAUTIL_EXISTS == false){
-	cerr << "DETECTOR=4 only works with an installation of AraRoot" << endl;
-	num_err++;
+	    cerr << "DETECTOR=4 only works with an installation of AraRoot" << endl;
+	    num_err++;
       } else {
 	
-	cerr << "DETECTOR is set to 4" << endl; 
-	cerr << "Setting READGEOM to 1" << endl;
-	READGEOM=1;
+	    cerr << "DETECTOR is set to 4" << endl; 
+	    cerr << "Setting READGEOM to 1" << endl;
+	    READGEOM=1;
 
-	cerr << "Setting number_of_stations to 1" << endl;
-	number_of_stations = 1;
+	    cerr << "Setting number_of_stations to 1" << endl;
+	    number_of_stations = 1;
 
-	if (DETECTOR_STATION <0 || DETECTOR_STATION >= NUM_INSTALLED_STATIONS){
-	  cerr << "DETECTOR_STATION is not set to a valid station number" << endl;
-	  num_err++;
-	}
-		
+	    if (DETECTOR_STATION <0 || DETECTOR_STATION >= NUM_INSTALLED_STATIONS){
+	        cerr << "DETECTOR_STATION is not set to a valid station number" << endl;
+	        num_err++;
+	    }	
       }
     }
 
@@ -971,6 +979,20 @@ int Settings::CheckCompatibilitiesSettings() {
    if (DETECTOR_STATION==0 && DETECTOR!=3){
       cerr << " DETECTOR_STATION=0 doesn't work with DETECTOR!=3. If you want to work with TestBed, use DETECTOR=3 & DETECTOR_STATION=0" << endl;
       num_err++;
+   }
+   if (DETECTOR==0){
+    cerr << "DETECTOR=0 is un-used in AraSim."<<endl;
+    num_err++;
+   }
+   if (DETECTOR_STATION>=0 && DETECTOR<3){
+    cerr << "DETECTOR_STATION>=0 is only compatible with DETECTOR=3 (Testbed) or DETECTOR=4 (deep stations)"<<endl;
+    num_err++;
+   }
+
+   // check that USE_PARAM_RE_TTERM_TABLE is only used with SIMULATION_MODE==1
+   if (USE_PARAM_RE_TTERM_TABLE==1 && SIMULATION_MODE!=1){
+    cerr << "USE_PARAM_RE_TTERM_TABLE=0 doesn't work with SIMULATION_MODE!=1"<<endl;
+    num_err++;
    }
 
 

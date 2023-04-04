@@ -351,8 +351,8 @@ int Primaries::GetSigma(double pnu,double& sigma,double &len_int_kgm2,Settings *
   // calculate cross section
   if (pnu<mine[settings1->SIGMAPARAM] || pnu>maxe[settings1->SIGMAPARAM]) {
     cout <<  "Need a parameterization for this energy region.(new)\n";
-//    return 0;
-      return 1;
+    return 0;
+      // return 1;
   } //if
   else {
    
@@ -1142,6 +1142,12 @@ Interaction::Interaction (double pnu, string nuflavor, int nu_nubar, int &n_inte
 
     //sigma_err = primary1->GetSigma( pnu, sigma, len_int_kgm2, settings1, nu_nubar, currentint);
     sigma_err = primary1->GetSigma( pnu, sigma, len_int_kgm2, settings1, nu_nubar, currentint, len_int_kgm2_total );
+    if(sigma_err!=1){
+        // getting the cross section has not worked
+        // likely we are asking for an energy for which it does not have a parameterization
+        // so we return immediately
+        return;
+    }
 //--------------------------------------------------
 //     cout<<"len_int_kgm2 from GetSigma : "<<len_int_kgm2<<endl;
 //     cout<<"sigma from GetSigma : "<<sigma<<endl;
@@ -2104,7 +2110,7 @@ double Interaction::PickNear_Sphere (IceModel *antarctica, Detector *detector, S
 
     double X, Y, Z;    // X,Y wrt detector core
     //calculate posnu's X, Y wrt detector core
-    if (detector->Get_mode() == 1 || detector->Get_mode() == 2 || detector->Get_mode() == 3) {   // detector mode is for ARA stations;
+    if (detector->Get_mode() == 1 || detector->Get_mode() == 2 || detector->Get_mode() == 3 || detector->Get_mode() == 4) {   // detector mode is for ARA stations;
       X = detector->params.core_x + transX;
       Y = detector->params.core_y + transY;
       Z = transZ;
@@ -2339,11 +2345,23 @@ void Interaction::PickNear_Cylinder_AboveIce (IceModel *antarctica, Detector *de
 }
 
 
+//! A function to set the exact neutrino interaction position
+/*!
 
+	PickExact will take in the specified theta (zenith) and phi (azimuth) angles and radial 
+		distance from the setup file (POSNU_THETA, POSNU_PHI, POSNU_R). This requires 
+		INTERACTION_MODE=2.
+	The convention is to measure phi in [0, 2*pi) from the positive x-hat direction and theta
+		in [0,pi] from the positive z-hat direction. The conversion to cartiesian 
+		coordinates is then
 
+		x = R * cos(phi) * sin(theta)
+		y = R * sin(phi) * sin(theta)
+		z = R * cos(theta)
 
-
-
+	These positions are measured relative to the center of the station, which is given by the 
+		variables avgX, avgY, and avgZ below (which may include the offset by core_x and core_y). 
+ */
 
 void Interaction::PickExact (IceModel *antarctica, Detector *detector, Settings *settings1, double thisR, double thisTheta, double thisPhi) {
     
@@ -2385,20 +2403,20 @@ void Interaction::PickExact (IceModel *antarctica, Detector *detector, Settings 
     if (detector->Get_mode() == 1 || detector->Get_mode() == 2 ||detector->Get_mode() == 3 ||detector->Get_mode() == 4) {   // detector mode is for ARA stations;
 //        X = detector->params.core_x + thisR*cos(thisPhi)*cos(thisTheta);
 //        Y = detector->params.core_y + thisR*sin(thisPhi)*cos(thisTheta);
-        X = avgX + thisR*cos(thisPhi)*cos(thisTheta);
-        Y = avgY + thisR*sin(thisPhi)*cos(thisTheta);
+        X = avgX + thisR*cos(thisPhi)*sin(thisTheta);
+        Y = avgY + thisR*sin(thisPhi)*sin(thisTheta);
         D = pow(X*X + Y*Y, 0.5);
         //interaction1->posnu.SetThetaPhi( D/antarctica->Surface(0., 0.), atan2(Y,X) ); 
     }
     //calculate posnu's X, Y wrt to (0,0)
     else {  // for mode = 0 (testbed)
-        X = thisR*cos(thisPhi)*cos(thisTheta);
-        Y = thisR*sin(thisPhi)*cos(thisTheta);
+        X = thisR*cos(thisPhi)*sin(thisTheta);
+        Y = thisR*sin(thisPhi)*sin(thisTheta);
         D = pow(X*X + Y*Y, 0.5);
     }
 
 //    double centerZ = (detector->stations[0].strings[0].antennas[1].GetZ()+ detector->stations[0].strings[0].antennas[2].GetZ())/2.;
-    Z = avgZ + thisR*sin(thisTheta);
+    Z = avgZ + thisR*cos(thisTheta);
     //    std::cout << "CenterPosition:X:Y:Z:: "  << avgX << " : " << avgY << " : " << avgZ <<  std::endl;
 
     //std::cout << "Central position: " << centerZ << " : " << Z << " : " << X << " : " << Y << std::endl;

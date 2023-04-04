@@ -55,7 +55,9 @@ class Antenna_r {
 
         vector <double> view_ang;    //viewing angle
         vector <double> launch_ang;  //launch angle
-        vector <double> rec_ang;     //receiving angle
+        vector <double> rec_ang;     //receiving angle phi (in radians)
+        vector <double> phi_rec;     // receiving phi angle,in antenna's coord system.
+        vector <double> theta_rec;     // receiving theta angle, in antenna's coord system.
         vector <double> reflect_ang; // surface reflection angle (if 100 : no reflection case)
         vector <double> Dist;        //Distance between posnu and antenna
         vector <double> L_att;        //Attenuation factor
@@ -65,6 +67,10 @@ class Antenna_r {
         //vector <Position> n_H;  // normalized vector for H pol
         //vector <Position> n_V;  // normalized vector for V pol
 
+	//! Save every ray steps between the vertex (source) and an antenna (target), unless DATA_SAVE_MODE is 2. 02-12-2021 -MK-
+	//! These xz coordinates were calculated after we convert the earth coordinates to flat coordinates by the RaySolver::Earth_to_Flat_same_angle()
+	vector < vector < vector <double> > > ray_step;
+
         // below freq domain simulation output
         vector < vector <double> > vmmhz;  // signal V/m/MHz for each freq bin
         //
@@ -72,6 +78,8 @@ class Antenna_r {
         vector <double> Mag;  // magnification factor
         vector <double> Fresnel;  // Fresnel factor
         vector <double> Pol_factor;  // Polarization factor
+        vector <double> Pol_factorH;  //Hpol Polarization factor
+        vector <double> Pol_factorV;  //Vpol Polarization factor
         
         vector < vector <double> > Vm_zoom;  // E field before ant T-domain
         vector < vector <double> > Vm_zoom_T;  // E field before ant T-domain time
@@ -106,15 +114,6 @@ class Antenna_r {
 
         vector <int> noise_ID;      // information about which pure noise waveform is used for trigger analysis
 
-        //vector < vector <double> > V_noise; // volt noise signal (with all factors applied as far as we can) (from thermal noise + fft)
-
-        //vector < vector <double> > V_total; // volt signal + noise with all factors applied as far as we can
-
-        //vector < vector <double> > V_total_diode;   // volt signal + noise with all factors (as far as we can) and convlution with diode (time domain)
-
-        //vector < vector <double> > V_total_timedelay;   // volt signal + noise with all factors applied and time delay between antennas
-        //
-        //
         vector <double> PeakV;  // peak voltage in time domain
         vector <int> Rank;      // rank of peak voltage between antennas (Rank = 0 for 0 signal)
 
@@ -137,7 +136,7 @@ class Antenna_r {
         void clear ();  // clear all vector format information for next event
         void clear_useless ( Settings *settings1 );  // clear all vector information which are useless
 
-        ClassDef(Antenna_r,1);
+        ClassDef(Antenna_r,2);
 };
 
 class String_r {
@@ -235,11 +234,17 @@ class Report {
     
 //    void Connect_Interaction_Detector (Event *event, Detector *detector, RaySolver *raysolver, Signal *signal, IceModel *icemodel, Settings *settings1, Trigger *trigger);
     
+
     void Connect_Interaction_Detector (Event *event, Detector *detector, RaySolver *raysolver, Signal *signal, IceModel *icemodel, Settings *settings1, Trigger *trigger, int evt,double* xdata, double* ydata, double* ang_data, double* snr_data);    
     double getAverageSNR(const vector<double> & mysignal,Trigger *trigger, const int PA_binsize, const int TOTAL_SIZE);
     double getAverageSNR2(int raysolnum);
     bool isTrigger(double eff);
     double interpolate(double *xdata,double *ydata, double xi, int numData);
+    void Connect_Interaction_Detector_V2 (Event *event, Detector *detector, RaySolver *raysolver, Signal *signal, IceModel *icemodel, Settings *settings1, Trigger *trigger, int evt);    
+    void rerun_event(Event *event, Detector *detector, RaySolver *raysolver, Signal *signal, IceModel *icemodel, Settings *settings, int which_solution,
+        vector<int> &numSolutions, vector<vector<vector<double> > > &traceTimes, vector<vector<vector<double> > > &traceVoltages
+        );
+
     
 #ifdef ARA_UTIL_EXISTS
 
@@ -268,14 +273,14 @@ class Report {
         void GetParameters (Position &src, Position &trg, Vector &nnu, double &viewangle, double receive_angle, Vector &launch_vector, Vector &receive_vector, Vector &n_trg_slappy, Vector &n_trg_pokey );    // get viewangle, launch, receive vectors  (it reads launch angle as a viewangle and returns actual viewangle)
 
         double GaintoHeight(double gain, double freq, double n_medium);
+        
+        double calculatePolFactor(Vector &Pol_vector, int ant_type, double antenna_theta, double antenna_phi);
 
-        void ApplyAntFactors(double heff, Vector &n_trg_pokey, Vector &n_trg_slappy, Vector &Pol_vector, int ant_type, double &pol_factor, double &vmmhz);
+        void ApplyAntFactors(double heff, Vector &n_trg_pokey, Vector &n_trg_slappy, Vector &Pol_vector, int ant_type, double &pol_factor, double &vmmhz, double antenna_theta, double antenna_phi);
 
-        void ApplyAntFactors_Tdomain(double AntPhase, double heff, Vector &n_trg_pokey, Vector &n_trg_slappy, Vector &Pol_vector, int ant_type, double &pol_factor, double &vm_real, double &vm_img, Settings *settings1);
+        void ApplyAntFactors_Tdomain(double AntPhase, double heff, Vector &n_trg_pokey, Vector &n_trg_slappy, Vector &Pol_vector, int ant_type, double &pol_factor, double &vm_real, double &vm_img, Settings *settings1, double antenna_theta, double antenna_phi, bool useInTransmitterMode=false);
 
-        void ApplyAntFactors_Tdomain_Transmitter(double AntPhase, double heff, Vector &n_trg_pokey, Vector &n_trg_slappy, Vector &Pol_vector, int ant_type, double &pol_factor, double &vm_real, double &vm_img, Settings *settings1);
-
-        void ApplyAntFactors_Tdomain_FirstTwo ( double heff, double heff_lastbin, Vector &n_trg_pokey, Vector &n_trg_slappy, Vector &Pol_vector, int ant_type, double &pol_factor, double &vm_bin0, double &vm_bin1);
+        void ApplyAntFactors_Tdomain_FirstTwo ( double heff, double heff_lastbin, Vector &n_trg_pokey, Vector &n_trg_slappy, Vector &Pol_vector, int ant_type, double &pol_factor, double &vm_bin0, double &vm_bin1, double antenna_theta, double antenna_phi);
 
 
         void ApplyElect_Tdomain(double freq, Detector *detector, double &vm_real, double &vm_img, Settings *settings1);

@@ -7,6 +7,7 @@
 
 //#include "TObject.h"
 #include <vector>
+#include <unordered_map>
 #include "Trigger.h"
 #include "Position.h"
 #include "Vector.h"
@@ -216,11 +217,11 @@ class Detector {
     private:
         static const int freq_step_max = 60;
         static const int ang_step_max = 2664;
-        void ReadVgain(string filename);
-        void ReadVgainSettings(string filename, Settings *settings1);
-	void ReadVgainTopSettings(string filename, Settings *settings1);
-        void ReadHgain(string filename);
-	void ReadHgainSettings(string filename, Settings *settings1);
+        void ReadAllAntennaGains(Settings *settings1);
+        double SWRtoTransCoeff(double swr);
+        void ReadVgain(string filename, Settings *settings1);
+        void ReadVgainTop(string filename, Settings *settings1);
+    	void ReadHgain(string filename, Settings *settings1);
         double Vgain[freq_step_max][ang_step_max];
         double Vphase[freq_step_max][ang_step_max];
         double VgainTop[freq_step_max][ang_step_max];
@@ -281,13 +282,32 @@ class Detector {
         vector < vector <double> > RFCM_TB_databin_ch;   // RFCM gain measured value for the TestBed (for each ch)
 
 
-        void ReadRayleighFit_TestBed(string filename, Settings *settings1, int ch_no); // will read Rayleigh fit result from the file
         void ReadRayleighFit_TestBed(string filename, Settings *settings1); // will read Rayleigh fit result from the file
         double Rayleigh_TB_ch[16][freq_step_max];   // Filter gain (dB) for Detector freq bin array
         vector < vector <double> > Rayleigh_TB_databin_ch;   // RFCM gain measured value for the TestBed (for each ch)
 
-        void ReadRayleighFit(string filename, Settings *settings1); // will read Rayleigh fit result from the file
-        vector < vector <double> > Rayleigh_databin_ch;   // RFCM gain measured value for the TestBed (for each ch)
+        /*
+        We need to store the Rayleigh fit values from data for any given number of stations
+        They are stored as an (unorderd) map of station numbers.
+        The keys are the station numbers, and the values are the fit values.
+        Data structures are listed below.
+
+
+        rayleighFits_DeepStation_values holds the Rayleigh sigma.
+        The first dimension is for the number of channels (so this is "number of channels" long).
+        The second dimension is for the number of frequency bins (so this is "number of frequency bins" long).
+        (which goes first and which goes second is arbitrary; 
+        the TestBed version does it in this order, so replicate here)
+
+        rayleighFits_DeepStation_frequencies holds the Rayleigh frequencies.
+        */
+
+        std::unordered_map<int, std::vector< std::vector< double> > > rayleighFits_DeepStation_values;
+        std::unordered_map<int, std::vector< double > > rayleighFits_DeepStation_frequencies;
+
+        // and a function to read values into them
+        void ReadRayleighFit_DeepStation(string filename, Settings *settings1);
+
 
 	void ReadNoiseFigure(string filename, Settings *settings1); 
 	double NoiseFig_ch[16][freq_step_max];
@@ -330,9 +350,7 @@ class Detector {
 
         double GetGain_1D(double freq, double theta, double phi, int ant_m);   //read antenna gain at certain angle, certain type. (orientation : default) and use 1-D interpolation to get gain
 
-        double GetGain_1D_OutZero(double freq, double theta, double phi, int ant_m);   //read antenna gain at certain angle, certain type. (orientation : default) and use 1-D interpolation to get gain, if freq bigger than freq range, return 0 gain
-
-        double GetGain_1D_OutZero(double freq, double theta, double phi, int ant_m, int ant_number);   //read antenna gain at certain angle, certain type. (orientation : default) and use 1-D interpolation to get gain, if freq bigger than freq range, return 0 gain
+        double GetGain_1D_OutZero(double freq, double theta, double phi, int ant_m, int ant_number=0);   //read antenna gain at certain angle, certain type. (orientation : default) and use 1-D interpolation to get gain, if freq bigger than freq range, return 0 gain
 
 	
 
@@ -370,9 +388,8 @@ class Detector {
         double GetRFCMGain_databin(int ch, int bin) { return RFCM_TB_databin_ch[ch][bin]; }   // bin for FFT
 
 
-        double GetRayleighFit(int ch, int bin) { return Rayleigh_TB_ch[ch][bin]; }   // same bin with Vgain, Hgain
         double GetRayleighFit_databin(int ch, int bin) { return Rayleigh_TB_databin_ch[ch][bin]; }   // bin for FFT
-
+        std::vector< std::vector< double> > GetRayleighFitVector_databin(int station, Settings *settings);
 
         double GetNoiseFig_databin(int ch, int bin) { return NoiseFig_databin_ch[ch%16][bin]; }   // bin for FFT
         double GetTransm_databin(int ch, int bin) {	if(ch%16<4){return transVTop_databin[bin];}
