@@ -220,8 +220,11 @@ class Detector {
         void ReadAllAntennaGains(Settings *settings1);
         double SWRtoTransCoeff(double swr);
         void ReadVgain(string filename, Settings *settings1);
+        void ReadVgainSettings(string filename, Settings *settings1);
+	    void ReadVgainTopSettings(string filename, Settings *settings1);
         void ReadVgainTop(string filename, Settings *settings1);
     	void ReadHgain(string filename, Settings *settings1);
+        void ReadHgainSettings(string filename, Settings *settings1);
         double Vgain[freq_step_max][ang_step_max];
         double Vphase[freq_step_max][ang_step_max];
         double VgainTop[freq_step_max][ang_step_max];

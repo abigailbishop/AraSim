@@ -134,6 +134,11 @@ int main(int argc, char **argv) {   // read setup.txt file
     
     // Detector *detector=new Detector(settings1, icemodel); // builds antenna array, 0 for testbed
     Detector *detector=new Detector(settings1, icemodel, setupfile ); // builds antenna array, 0 for testbed
+    // detector->get_NewDiodeModel(settings1);
+    // detector->ReadFilter_New(settings1);
+    // detector->ReadPreamp_New(settings1);
+    // detector->ReadFOAM_New(settings1);
+    // detector->ReadElectChain_New(settings1);
     cout<<"end calling detector"<<endl;
     // Detector *detector=new Detector(settings1->DETECTOR); // builds antenna array, 0 for testbed
 
@@ -511,12 +516,8 @@ int main(int argc, char **argv) {   // read setup.txt file
 
             //report->Connect_Interaction_Detector (event, detector, raysolver, signal, icemodel, settings1, trigger, theEvent);
 
-            if (detector->Get_mode()==5 || detector->Get_mode()==9){
-                report->Connect_Interaction_Detector (event, detector, raysolver, signal, icemodel, settings1, trigger, Events_Thrown,snr_PA,eff_PA,angle_PA,aSNR_PA);
-            }
-            else{
-                report->Connect_Interaction_Detector_V2 (event, detector, raysolver, signal, icemodel, settings1, trigger, Events_Thrown);
-            }
+            report->Connect_Interaction_Detector (event, detector, raysolver, signal, icemodel, settings1, trigger, Events_Thrown,snr_PA,eff_PA,angle_PA,aSNR_PA);
+            
 
             //report->Connect_Interaction_Detector (event, detector, raysolver, signal, icemodel, settings1, trigger, theEvent, Events_Thrown);
 
