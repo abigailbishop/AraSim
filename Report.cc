@@ -1653,7 +1653,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                         // Cosmic Ray Events
                                         else if (settings1->EVENT_TYPE == 20) {
 
-                                            // initially give raysol has actual signal
+                                            // Note that a signal was generated
                                             stations[i].strings[j].antennas[k].SignalExt[ray_sol_cnt] = 1;
 
                                             // Create NNew array for this ray solution
