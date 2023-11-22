@@ -1650,7 +1650,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                         } // Pulser Events     
 
                                         
-                                        // Cosmic Ray Events
+                                        // Imported Electric Field Events (like CRs from CoREAS)
                                         else if (settings1->EVENT_TYPE == 20) {
 
                                             // Generate signals, propagate, send through antennas, 
@@ -1663,18 +1663,18 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                 // Note that a signal was generated
                                                 stations[i].strings[j].antennas[k].SignalExt[ray_sol_cnt] = 1;
 
-                                                // Calculate signal attenuation-in-ice factor
-                                                double atten_factor = 0.;
-                                                if (    settings1->USE_ARA_ICEATTENU == 1 // ARA measured with depth from ray steps
-                                                     || settings1->USE_ARA_ICEATTENU == 0 // old ice attenuation factor with one depth info
-                                                ) {
-                                                    // assume whichray = 0, now vmmhz1m_tmp has all factors except for the detector properties (antenna gain, etc)
-                                                    atten_factor = 1. / ray_output[0][ray_sol_cnt] * IceAttenFactor * mag * fresnel;
-                                                }
-                                                else if (settings1->USE_ARA_ICEATTENU == 2) { // frequency dependent model with depth from ray steps
-                                                    //apply freq dependent IceAttenFactor later
-                                                    atten_factor = 1. / ray_output[0][ray_sol_cnt] *mag * fresnel;
-                                                }
+                                                // // Calculate signal attenuation-in-ice factor
+                                                // double atten_factor = 0.;
+                                                // if (    settings1->USE_ARA_ICEATTENU == 1 // ARA measured with depth from ray steps
+                                                //      || settings1->USE_ARA_ICEATTENU == 0 // old ice attenuation factor with one depth info
+                                                // ) {
+                                                //     // assume whichray = 0, now vmmhz1m_tmp has all factors except for the detector properties (antenna gain, etc)
+                                                //     atten_factor = 1. / ray_output[0][ray_sol_cnt] * IceAttenFactor * mag * fresnel;
+                                                // }
+                                                // else if (settings1->USE_ARA_ICEATTENU == 2) { // frequency dependent model with depth from ray steps
+                                                //     //apply freq dependent IceAttenFactor later
+                                                //     atten_factor = 1. / ray_output[0][ray_sol_cnt] *mag * fresnel;
+                                                // }
 
                                                 // Attenuation factor applied here via GetVm_FarField_Tarray
 
@@ -1782,28 +1782,28 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                     }
                                                 } // end calculating antenna effective height in the last bin                                       
                                                 
-                                                //Defining polarization at the source (using launch_vector) and having it propagate.
-                                                double psi = TMath::DegToRad()*settings1->CLOCK_ANGLE;
-                                                double theta = acos(launch_vector[2]); //launch_vector is a unit vector
-                                                double phi = atan2(launch_vector[1],launch_vector[0]);
-                                                double newPol_vectorX = -cos(psi)*cos(theta)*cos(phi) + sin(psi)*sin(phi);
-                                                double newPol_vectorY = -cos(psi)*cos(theta)*sin(phi) - sin(psi)*cos(phi);
-                                                double newPol_vectorZ = cos(psi)*sin(theta);
-                                                Vector Pol_vector = Vector(newPol_vectorX, newPol_vectorY, newPol_vectorZ);                                            
+                                                // //Defining polarization at the source (using launch_vector) and having it propagate.
+                                                // double psi = TMath::DegToRad()*settings1->CLOCK_ANGLE;
+                                                // double theta = acos(launch_vector[2]); //launch_vector is a unit vector
+                                                // double phi = atan2(launch_vector[1],launch_vector[0]);
+                                                // double newPol_vectorX = -cos(psi)*cos(theta)*cos(phi) + sin(psi)*sin(phi);
+                                                // double newPol_vectorY = -cos(psi)*cos(theta)*sin(phi) - sin(psi)*cos(phi);
+                                                // double newPol_vectorZ = cos(psi)*sin(theta);
+                                                // Vector Pol_vector = Vector(newPol_vectorX, newPol_vectorY, newPol_vectorZ);                                            
 
-                                                // Get Fresnel coefficients and polarization at the antenna
-                                                icemodel->GetFresnel(
-                                                    ray_output[1][ray_sol_cnt], // launch_angle
-                                                    ray_output[2][ray_sol_cnt], // rec_angle
-                                                    ray_output[3][ray_sol_cnt], // reflect_angle
-                                                    event->Nu_Interaction[0].posnu,
-                                                    launch_vector,
-                                                    receive_vector,
-                                                    settings1,
-                                                    fresnel,
-                                                    mag,
-                                                    Pol_vector
-                                                ); // input src Pol and return Pol at trg
+                                                // // Get Fresnel coefficients and polarization at the antenna
+                                                // icemodel->GetFresnel(
+                                                //     ray_output[1][ray_sol_cnt], // launch_angle
+                                                //     ray_output[2][ray_sol_cnt], // rec_angle
+                                                //     ray_output[3][ray_sol_cnt], // reflect_angle
+                                                //     event->Nu_Interaction[0].posnu,
+                                                //     launch_vector,
+                                                //     receive_vector,
+                                                //     settings1,
+                                                //     fresnel,
+                                                //     mag,
+                                                //     Pol_vector
+                                                // ); // input src Pol and return Pol at trg
                                                 
                                                 // Calculate and apply antenna factors and electronics chain gain, bin-by-bin (bin=frequency)
                                                 for (int n = 0; n < stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2; n++) { // loop over bins
@@ -1907,28 +1907,28 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                         );
                                                     }
 
-                                                    // Apply frequency dependent attenuation model if requested by user
-                                                    if (settings1->USE_ARA_ICEATTENU == 2) {
-                                                        double IceAttenFactor = 1.;
-                                                        double dx, dz, dl;
-                                                        for (int steps = 1; steps < (int) RayStep[ray_sol_cnt][0].size(); steps++) {
-                                                            dx = RayStep[ray_sol_cnt][0][steps - 1] - RayStep[ray_sol_cnt][0][steps];
-                                                            dz = RayStep[ray_sol_cnt][1][steps - 1] - RayStep[ray_sol_cnt][1][steps];
-                                                            dl = sqrt((dx *dx) + (dz *dz));
-
-                                                            // Skipping attenuation calculation when the distance between two RaySteps is 0. Prevening adds -nan into the IceAttenFactor. (MK 2021)
-                                                            if (dl > 0) {
-                                                                // use ray midpoint for attenuation calculation
-                                                                IceAttenFactor *= (
-                                                                    exp(-dl / icemodel->GetFreqDepIceAttenuLength(-RayStep[ray_sol_cnt][1][steps], freq_tmp *1.E-9)) +
-                                                                    exp(-dl / icemodel->GetFreqDepIceAttenuLength(-RayStep[ray_sol_cnt][1][steps - 1], freq_tmp *1.E-9))
-                                                               ) / 2.;  // 1e9 for conversion to GHz
-                                                            }
-                                                        }
-                                                        //cout << "apply IceAttenFactor to the real part of fft. V_forfft[2 *n] = " << V_forfft[2 *n] << " *" << IceAttenFactor << endl;
-                                                        V_forfft[2 *n] *= IceAttenFactor;   // apply IceAttenFactor to the real part of fft
-                                                        V_forfft[2 *n + 1] *= IceAttenFactor;   // apply IceAttenFactor to the imag part of fft
-                                                    } // end calculate frequency dependent ice attenuation model
+                                                    // // Apply frequency dependent attenuation model if requested by user
+                                                    // if (settings1->USE_ARA_ICEATTENU == 2) {
+                                                    //     double IceAttenFactor = 1.;
+                                                    //     double dx, dz, dl;
+                                                    //     for (int steps = 1; steps < (int) RayStep[ray_sol_cnt][0].size(); steps++) {
+                                                    //         dx = RayStep[ray_sol_cnt][0][steps - 1] - RayStep[ray_sol_cnt][0][steps];
+                                                    //         dz = RayStep[ray_sol_cnt][1][steps - 1] - RayStep[ray_sol_cnt][1][steps];
+                                                    //         dl = sqrt((dx *dx) + (dz *dz));
+                                                    //
+                                                    //         // Skipping attenuation calculation when the distance between two RaySteps is 0. Prevening adds -nan into the IceAttenFactor. (MK 2021)
+                                                    //         if (dl > 0) {
+                                                    //             // use ray midpoint for attenuation calculation
+                                                    //             IceAttenFactor *= (
+                                                    //                 exp(-dl / icemodel->GetFreqDepIceAttenuLength(-RayStep[ray_sol_cnt][1][steps], freq_tmp *1.E-9)) +
+                                                    //                 exp(-dl / icemodel->GetFreqDepIceAttenuLength(-RayStep[ray_sol_cnt][1][steps - 1], freq_tmp *1.E-9))
+                                                    //            ) / 2.;  // 1e9 for conversion to GHz
+                                                    //         }
+                                                    //     }
+                                                    //     //cout << "apply IceAttenFactor to the real part of fft. V_forfft[2 *n] = " << V_forfft[2 *n] << " *" << IceAttenFactor << endl;
+                                                    //     V_forfft[2 *n] *= IceAttenFactor;   // apply IceAttenFactor to the real part of fft
+                                                    //     V_forfft[2 *n + 1] *= IceAttenFactor;   // apply IceAttenFactor to the imag part of fft
+                                                    // } // end calculate frequency dependent ice attenuation model
 
                                                     // apply entire elect chain gain, phase
                                                     if (n > 0) {                                                  
@@ -1992,7 +1992,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                 // Note the peak signal is 0
                                                 stations[i].strings[j].antennas[k].PeakV.push_back(0.);
                                             } // end no signal generated
-                                        } // end event type 20, Cosmic Ray Events                       
+                                        } // end event type 20, imported electric field events                     
                                         
                                     }   // if not calpulser event
 

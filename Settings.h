@@ -79,7 +79,7 @@ class Settings
 
         int USE_PARAM_RE_TTERM_TABLE; // 1 (default): use the table, 0: do not use the table (takes ~10x longer)
 
-        int EVENT_TYPE;         // 0 : neutrino only events,  1 : blackhole evnet? ... etc
+        int EVENT_TYPE;         // 0 : neutrino only events,  1 : blackhole evnet? ... etc, 20 : events where electric field is imported to AraSim via text files
 
         int WAVE_TYPE;          // 0 : plane wave,  1 : spherical wave
 
