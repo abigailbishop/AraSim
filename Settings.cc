@@ -307,6 +307,8 @@ outputdir="outputs"; // directory where outputs go
     
     CLOCK_ANGLE=0; //Default: 0 -- Angle of polarization "on the clock".  Angle of zero is pure thetaPol, whereas 90º is pure phiPol.
 
+    EXT_EFIELD_DIR="none"; // Default : "none"
+
 
 
 
@@ -716,6 +718,9 @@ void Settings::ReadFile(string setupfile) {
           else if (label == "SOURCE_DEPTH"){
                SOURCE_DEPTH = atof(line.substr(line.find_first_of("=") + 1).c_str());
           }
+          else if (label == "EXT_EFIELD_DIR"){
+               EXT_EFIELD_DIR = atof(line.substr(line.find_first_of("=") + 1).c_str());
+          }
 
 
 
@@ -1007,6 +1012,12 @@ int Settings::CheckCompatibilitiesSettings() {
       num_err++;
     }
     */
+
+   // Verify that if EVENT_TYPE=20 (input Electric field mode), we were provided with the folder of Electric Field files
+    if (EVENT_TYPE==20 && EXT_EFIELD_DIR=="none") {
+        cerr<<"EXT_EFIELD_DIR must be provided and filled for EVENT_MODE=20."<<endl;
+        num_err++;
+    }
 
     // Verify valid DETECTOR_STATION_LIVETIME_CONFIG values for Installed A1-A5 stations
     if (DETECTOR == 4 ) {

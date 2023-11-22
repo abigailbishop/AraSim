@@ -117,6 +117,9 @@ int main(int argc, char **argv) {   // read setup.txt file
             return -1;
         }
     }
+    if (settings1->EVENT_TYPE==20){ // for external electric field events, get folder containing electric fields for each antenna
+        settings1->EXT_EFIELD_DIR = argv[argc - 1];
+    }
     // set gRandom as TRandom3 when settings1->RANDOM_MODE = 1
     if (settings1->RANDOM_MODE == 1) {
         // test TRandom3

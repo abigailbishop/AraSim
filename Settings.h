@@ -426,6 +426,8 @@ int FORSECKEL; // Make array of strength of signal across frequencies for differ
 
 double ROUGHSIZE; // roughness size
 
+string EXT_EFIELD_DIR; // The folder containing the time and x, y , z components of electric field for each antenna (saved as "30.txt" for antenna 0 on string 3, and so on)
+
 
 /* int ICE_MODEL=0; //Select ice model to be used.  0 = Crust 2.0 , 1 = BEDMAP. */
 /* int NOFZ=1; // 1=depth dependent index of refraction,0=off */
