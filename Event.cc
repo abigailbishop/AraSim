@@ -237,6 +237,21 @@ Event::Event (Settings *settings1, Spectra *spectra1, Primaries *primary1, IceMo
         */
 
     }
+    if (Event_type == 20) { // Events for which electric field was calculated outside of AraSim
+        
+        // Initialize Neutrino Properties as 0 or ""
+        pnu = 0;
+        nuflavor = "";
+        nuflavorint = 0;
+        nu_nubar = 0;
+        
+        // Obtain the interaction object
+        Interaction *Nu_temp;
+        Nu_temp = new Interaction (settings1, detector, icemodel, primary1, signal );
+        Nu_Interaction.push_back(*Nu_temp);  // for the first interaction
+        delete Nu_temp;
+
+    } // End event_type=20
 
     IsCalpulser = primary1->IsCalpulser;
 

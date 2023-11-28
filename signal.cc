@@ -318,6 +318,88 @@ Signal::~Signal() {
     }
 }
 
+void Signal::ReadExternalEField(
+    string directory, string antenna, Vector &Pol_vector
+){
+    // Read in the Electric Field from saved to text files located in 
+    //   `directory` under the filename `antenna` and extract polarization, 
+    //   raw electric field, and timing
+    // Antenna file name must be of the format `s1a2` where 
+    //   1 is the string at index 1 in the detector->stations[0].strings object
+    //   2 is the antenna at index 2 on the aforementioned string
+
+    // Empty the waveform arrays of previous data
+    PulserWaveform_T.clear();
+    PulserWaveform_V.clear();
+    
+    // Prepare variables for calculating average EField 
+    double avg_efx;
+    double avg_efy;
+    double avg_efz;
+    int n_lines;
+
+    // Read file
+    std::string filename = directory+"/"+antenna;
+    ifstream efield_file(filename);
+    double this_time;
+    double this_efx;
+    double this_efy;
+    double this_efz;
+    if (efield_file){
+
+        // Iterate over each line of the file and extract info
+        while (1) {
+
+            // Try and read line, exit at first broken line (aka, last line)
+            efield_file >> this_time >> this_efx >> this_efy >> this_efz;
+            if (!efield_file.good()) break;
+            n_lines++;
+
+            // Convert units of input data (from CoREAS)
+            // From CoREAS manual: 
+            //    the positive X-axis pointing to the magnetic North, 
+            //    the positive Y -axis to the West, and the Z-axis upwards
+            this_time *= 1e9; // from seconds to nanoseconds
+            this_efx *= (2.998e10 / 1e6); // from statV/cm to V/m
+            this_efy *= (2.998e10 / 1e6); // from statV/cm to V/m
+            this_efz *= (2.998e10 / 1e6); // from statV/cm to V/m
+
+            // Save time and magnitude of electric field
+            PulserWaveform_T.push_back(this_time);
+            PulserWaveform_V.push_back( pow( (
+              pow(this_efx,2) + pow(this_efy,2) + pow(this_efz,2) 
+            ), 0.5) );
+
+            // Add to the average electric field variables
+            avg_efx += this_efx;
+            avg_efy += this_efy;
+            avg_efz += this_efz;
+
+        }
+
+        // Calculate the average electric field
+        avg_efx /= n_lines;
+        avg_efy /= n_lines;
+        avg_efz /= n_lines;
+
+        // Calculate polarization vector from average electric field
+        double ef_magnitude = pow( ( 
+            pow(avg_efx,2) + pow(avg_efy,2) + pow(avg_efz,2)
+        ), 0.5 );
+        Pol_vector = Vector(
+            avg_efx / ef_magnitude, 
+            avg_efy / ef_magnitude,
+            avg_efz / ef_magnitude
+        );
+
+    } // end read file
+    else {
+        // If file cannot be openned, throw and error
+        cerr<<filename<<" cannot be openned. ";
+        cerr<<"Cannot read Electric field for this antenna"<<endl;
+    }
+
+} // end ReadExternalEField
 
 
 

@@ -25,7 +25,7 @@ class Event {
 
   public:
 
-      int Event_type;   // 0 : neutrino event,  1 : blackhole event,  2 : monopole event,... etc
+      int Event_type;   // 0 : neutrino event,  1 : blackhole event,  2 : monopole event,... etc, 20 : external electric field generation
 
       int inu_thrown; // event number. in case we save triggered events only, this event number could be useful
 

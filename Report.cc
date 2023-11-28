@@ -1653,12 +1653,24 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                         // Imported Electric Field Events (like CRs from CoREAS)
                                         else if (settings1->EVENT_TYPE == 20) {
 
+                                            // Get the electric field from the file
+                                            signal->ReadExternalEField(
+                                                settings1->EXT_EFIELD_DIR, 
+                                                "s" + std::to_string(j) + "a" + std::to_string(k), 
+                                                Pol_vector
+                                            );
+
+                                            // Get maximum Electric Field amplitude
+                                            double max_efield;
+                                            for (int i=0; i<signal->PulserWaveform_V.size(); i++){
+                                                if ( signal->PulserWaveform_V[i] > max_efield ) {
+                                                    max_efield = signal->PulserWaveform_V[i];
+                                                }
+                                            }
+
                                             // Generate signals, propagate, send through antennas, 
                                             // pass through electronics, and read out resulting voltage
-                                            if (
-                                                event->Nu_Interaction[0].LQ > 0 && // Non-zero integrated shower profile, LQ
-                                                ( fabs(viewangle - signal->CHANGLE_ICE) <= settings1->OFFCONE_LIMIT *RADDEG) // viewing angle near the cone
-                                            ) { // Will generate a signal
+                                            if ( max_efield > 0 ) { // A signal was generated
 
                                                 // Note that a signal was generated
                                                 stations[i].strings[j].antennas[k].SignalExt[ray_sol_cnt] = 1;
@@ -1722,7 +1734,9 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                 } // end loop over bins, populating time and voltage arrays                                    
 
                                                 // Save peak of voltage array
-                                                stations[i].strings[j].antennas[k].PeakV.push_back(FindPeak(V_forfft, waveform_bin));
+                                                stations[i].strings[j].antennas[k].PeakV.push_back(
+                                                    FindPeak(V_forfft, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt])
+                                                );
 
                                                 // this forward fft volts_forfft is now in unit of V at each freq 
                                                 // we can just apply each bin's gain factor to each freq bins
@@ -1951,7 +1965,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                 } // end loop over frequency bins to apply antenna factors and electric chain gain
 
                                                 // Convert V_forfft back to time domain and interpolate
-                                                Tools::realft(V_forfft, -1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]);                                            
+                                                Tools::realft(V_forfft, -1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]);                                       
                                                 Tools::SincInterpolation(
                                                     stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt], 
                                                     T_forfft, V_forfft, 
