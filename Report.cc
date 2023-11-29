@@ -1654,7 +1654,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                         else if (settings1->EVENT_TYPE == 20) {
 
                                             // Get the electric field from the file
-                                            cout<<"String "<<j<<"  Antenna "<<k<<" "<<endl;
+                                            cout<<"String "<<j<<"  Antenna "<<k<<" with "<<ray_output[0].size()<<" solutions"<<endl;
                                             double max_efield;
                                             signal->ReadExternalEField(
                                                 settings1->EXT_EFIELD_DIR, 
