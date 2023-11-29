@@ -1654,19 +1654,13 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                         else if (settings1->EVENT_TYPE == 20) {
 
                                             // Get the electric field from the file
+                                            double max_efield;
                                             signal->ReadExternalEField(
                                                 settings1->EXT_EFIELD_DIR, 
                                                 "s" + std::to_string(j) + "a" + std::to_string(k), 
-                                                Pol_vector
+                                                Pol_vector, max_efield
                                             );
-
-                                            // Get maximum Electric Field amplitude
-                                            double max_efield;
-                                            for (int i=0; i<signal->PulserWaveform_V.size(); i++){
-                                                if ( signal->PulserWaveform_V[i] > max_efield ) {
-                                                    max_efield = signal->PulserWaveform_V[i];
-                                                }
-                                            }
+                                            cout<<"ADB "<<j<<" "<<k<<" "<<max_efield<<endl;
 
                                             // Generate signals, propagate, send through antennas, 
                                             // pass through electronics, and read out resulting voltage
@@ -1972,6 +1966,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                     settings1->NFOUR / 2, 
                                                     T_forint, volts_forint
                                                 );
+                                                cout<<"{ ("<<T_forfft[0]<<", "<<T_forfft[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]-1]<<"), ("<<T_forint[0]<<", "<<T_forint[settings1->NFOUR / 2-1]<<") }"<<endl;
 
                                                 // Populate final voltage array after last calculation (including attenuation)
                                                 for (int n = 0; n < settings1->NFOUR / 2; n++) {

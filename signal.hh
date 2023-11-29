@@ -187,7 +187,10 @@ double changle; // cherenkov angle
   std::vector<double> PulserWaveform_T;
   void ReadPulserWaveform(std::string target);
 
-  void ReadExternalEField(std::string directory, std::string antenna, Vector &Pol_vector);
+  void ReadExternalEField(
+      std::string directory, std::string antenna, 
+      Vector &Pol_vector, double &max_efield
+  );
 
   // variables needed to precompute the Param_RE_Tterm tables
   std::vector<double> tterm_table_em;
