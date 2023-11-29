@@ -308,6 +308,7 @@ outputdir="outputs"; // directory where outputs go
     CLOCK_ANGLE=0; //Default: 0 -- Angle of polarization "on the clock".  Angle of zero is pure thetaPol, whereas 90º is pure phiPol.
 
     EXT_EFIELD_DIR="none"; // Default : "none"
+    EXT_EFIELD_TSHIFT=0; // Default: 0 ns
 
 
 
@@ -720,6 +721,9 @@ void Settings::ReadFile(string setupfile) {
           }
           else if (label == "EXT_EFIELD_DIR"){
                EXT_EFIELD_DIR = atof(line.substr(line.find_first_of("=") + 1).c_str());
+          }
+          else if (label == "EXT_EFIELD_TSHIFT"){
+               EXT_EFIELD_TSHIFT = atof(line.substr(line.find_first_of("=") + 1).c_str());
           }
 
 

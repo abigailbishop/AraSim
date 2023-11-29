@@ -319,7 +319,8 @@ Signal::~Signal() {
 }
 
 void Signal::ReadExternalEField(
-    string directory, string antenna, Vector &Pol_vector, double &max_efield
+    string directory, string antenna, Vector &Pol_vector, double &max_efield,
+    Settings *settings1
 ){
     // Read in the Electric Field from saved to text files located in 
     //   `directory` under the filename `antenna` and extract polarization, 
@@ -370,7 +371,7 @@ void Signal::ReadExternalEField(
             ), 0.5);
 
             // Save time and magnitude of electric field
-            PulserWaveform_T.push_back(this_time);
+            PulserWaveform_T.push_back(this_time - settings1->EXT_EFIELD_TSHIFT);
             PulserWaveform_V.push_back(ef_magnitude);
 
             // Add to the average electric field variables
@@ -385,12 +386,7 @@ void Signal::ReadExternalEField(
             }
 
         }
-
-        // Center the maximum electric field at a time of 0 
-        // Use `max_efield_time` to shift the time array
-        for (int n=0; n<PulserWaveform_T.size(); n++){
-            PulserWaveform_T[n] -= max_efield_time;
-        }
+        cout<<"  Max EField Amplitude: "<<max_efield<<" at "<<max_efield_time<<" ns"<<endl;
 
         // Calculate the average electric field
         avg_efx /= n_lines;

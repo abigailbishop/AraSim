@@ -189,7 +189,8 @@ double changle; // cherenkov angle
 
   void ReadExternalEField(
       std::string directory, std::string antenna, 
-      Vector &Pol_vector, double &max_efield
+      Vector &Pol_vector, double &max_efield, 
+      Settings *settings1
   );
 
   // variables needed to precompute the Param_RE_Tterm tables

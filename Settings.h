@@ -427,6 +427,7 @@ int FORSECKEL; // Make array of strength of signal across frequencies for differ
 double ROUGHSIZE; // roughness size
 
 string EXT_EFIELD_DIR; // The folder containing the time and x, y , z components of electric field for each antenna (saved as "30.txt" for antenna 0 on string 3, and so on)
+double EXT_EFIELD_TSHIFT; // The amount of time by which to shift time traces in Electric Field (since Tools::SincInterpolation doesn't perform properly if the interesting part of the signal isn't located at t=0)
 
 
 /* int ICE_MODEL=0; //Select ice model to be used.  0 = Crust 2.0 , 1 = BEDMAP. */
