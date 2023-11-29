@@ -1464,7 +1464,7 @@ Interaction::Interaction (Settings *settings1, Detector *detector, IceModel *ant
     Initialize ();
 
 
-    if (settings1->EVENT_TYPE == 10){
+    if (settings1->EVENT_TYPE == 10 || settings1->EVENT_TYPE == 20){
       weight=1.;
     }
 
