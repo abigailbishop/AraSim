@@ -13,6 +13,7 @@
 #include "TCanvas.h"
 #include "TGraph.h"
 
+#include "FFTtools.h"
 
 #include "Constants.h"
 
@@ -335,12 +336,6 @@ void Signal::ReadExternalEField(
     PulserWaveform_T.clear();
     PulserWaveform_V.clear();
     
-    // Prepare variables for calculating average EField 
-    double avg_efx;
-    double avg_efy;
-    double avg_efz;
-    int n_lines;
-
     // Determine what times we'll collect electric fields for
     double time_minimum = settings1->EXT_EFIELD_TSHIFT - (time_window/2);
     double time_maximum = settings1->EXT_EFIELD_TSHIFT + (time_window/2);
@@ -354,6 +349,10 @@ void Signal::ReadExternalEField(
     double this_efx;
     double this_efy;
     double this_efz;
+    std::vector<double> times;
+    std::vector<double> efxs;
+    std::vector<double> efys;
+    std::vector<double> efzs;
     if (efield_file){
 
         // Iterate over each line of the file and extract info
@@ -362,7 +361,6 @@ void Signal::ReadExternalEField(
             // Try and read line, exit at first broken line (aka, last line)
             efield_file >> this_time >> this_efx >> this_efy >> this_efz;
             if (!efield_file.good()) break;
-            n_lines++;
 
             // Convert units of input data (from CoREAS)
             // From CoREAS manual: 
@@ -390,10 +388,11 @@ void Signal::ReadExternalEField(
             PulserWaveform_T.push_back(this_time - settings1->EXT_EFIELD_TSHIFT);
             PulserWaveform_V.push_back(ef_magnitude);
 
-            // Add to the average electric field variables
-            avg_efx += this_efx;
-            avg_efy += this_efy;
-            avg_efz += this_efz;
+            // Save time and electric field values for use later in this function
+            times.push_back(this_time);
+            efxs.push_back(this_efx);
+            efys.push_back(this_efy);
+            efzs.push_back(this_efz);
 
             // Check for/save maximum electric field value
             if ( ef_magnitude > max_efield ) {
@@ -404,20 +403,50 @@ void Signal::ReadExternalEField(
         }
         cout<<"  Max EField Amplitude: "<<max_efield<<" at "<<max_efield_time<<" ns"<<endl;
 
-        // Calculate the average electric field
-        avg_efx /= n_lines;
-        avg_efy /= n_lines;
-        avg_efz /= n_lines;
-
-        // Calculate polarization vector from average electric field
-        double ef_magnitude = pow( ( 
-            pow(avg_efx,2) + pow(avg_efy,2) + pow(avg_efz,2)
-        ), 0.5 );
+        // Calculate polarization vector using the unit vector made from
+        //   taking the maximum value of the hilbert envelope over 
+        //   the electric field in the x, y and z directions
+        // Graph electric field and retrieve Hilbert Envelope
+        TGraph *efxs_TGraph = new TGraph(efxs.size(), &times[0], &efxs[0]);
+        TGraph *efxs_enveloped = FFTtools::getHilbertEnvelope(efxs_TGraph);
+        TGraph *efys_TGraph = new TGraph(efys.size(), &times[0], &efys[0]);
+        TGraph *efys_enveloped = FFTtools::getHilbertEnvelope(efys_TGraph);
+        TGraph *efzs_TGraph = new TGraph(efzs.size(), &times[0], &efzs[0]);
+        TGraph *efzs_enveloped = FFTtools::getHilbertEnvelope(efzs_TGraph);
+        // Find the maximum hilbert-enveloped electric field value
+        double max_efx = 0;
+        double max_efy = 0;
+        double max_efz = 0;
+        for (int n=0; n<times.size(); n++) {
+            if ( efxs_enveloped->GetY()[n] > max_efx ) {
+                max_efx = efxs_enveloped->GetY()[n];
+            }
+            if ( efys_enveloped->GetY()[n] > max_efy ) {
+                max_efy = efys_enveloped->GetY()[n];
+            }
+            if ( efzs_enveloped->GetY()[n] > max_efz ) {
+                max_efz = efzs_enveloped->GetY()[n];
+            }
+        }
+        // Calculate magnitude of maximum hilbert-enveloped signal
+        double ef_magnitude_enveloped = pow( (
+            pow(max_efx,2) + pow(max_efy,2) + pow(max_efz,2) 
+        ), 0.5);
+        cout<<"  Amplitude of Hilbert Enveloped Signal: "<<ef_magnitude_enveloped<<endl;
+        cout<<"  Hilbert Enveloped: "<<max_efx<<" "<<max_efy<<" "<<max_efz<<endl;
+        // Create the polarization vector (with a length of 1)
         Pol_vector = Vector(
-            avg_efx / ef_magnitude, 
-            avg_efy / ef_magnitude,
-            avg_efz / ef_magnitude
+            max_efx / ef_magnitude_enveloped, 
+            max_efy / ef_magnitude_enveloped,
+            max_efz / ef_magnitude_enveloped
         );
+        // Clean up after polarization calculation
+        delete efxs_TGraph;
+        delete efxs_enveloped;
+        delete efys_TGraph;
+        delete efys_enveloped;
+        delete efzs_TGraph;
+        delete efzs_enveloped;
 
     } // end read file
     else {
