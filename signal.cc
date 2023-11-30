@@ -319,7 +319,9 @@ Signal::~Signal() {
 }
 
 void Signal::ReadExternalEField(
-    string directory, string antenna, Vector &Pol_vector, double &max_efield,
+    string directory, string antenna, 
+    double time_window,
+    Vector &Pol_vector, double &max_efield,
     Settings *settings1
 ){
     // Read in the Electric Field from saved to text files located in 
@@ -338,6 +340,10 @@ void Signal::ReadExternalEField(
     double avg_efy;
     double avg_efz;
     int n_lines;
+
+    // Determine what times we'll collect electric fields for
+    double time_minimum = settings1->EXT_EFIELD_TSHIFT - (time_window/2);
+    double time_maximum = settings1->EXT_EFIELD_TSHIFT + (time_window/2);
 
     // Read file
     std::string filename = directory+"/"+antenna;
@@ -363,6 +369,16 @@ void Signal::ReadExternalEField(
             //    the positive X-axis pointing to the magnetic North, 
             //    the positive Y -axis to the West, and the Z-axis upwards
             this_time *= 1e9; // from seconds to nanoseconds
+            if ( this_time < time_minimum ) {
+                // If the time associated with this line is less than the 
+                //   first time stamp we're looking for, skip this line
+                continue;
+            }
+            else if ( this_time > time_maximum ){
+                // If the time associated with this line is greater than the
+                //   last time stamp we're looking for, end the loop
+                break;
+            }
             this_efx *= (2.998e10 / 1e6); // from statV/cm to V/m
             this_efy *= (2.998e10 / 1e6); // from statV/cm to V/m
             this_efz *= (2.998e10 / 1e6); // from statV/cm to V/m

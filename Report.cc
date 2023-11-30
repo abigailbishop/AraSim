@@ -1659,6 +1659,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                             signal->ReadExternalEField(
                                                 settings1->EXT_EFIELD_DIR, 
                                                 "s" + std::to_string(j) + "a" + std::to_string(k), 
+                                                T_forint[settings1->NFOUR/2 -1] - T_forint[0],
                                                 Pol_vector, max_efield, settings1
                                             );
 
