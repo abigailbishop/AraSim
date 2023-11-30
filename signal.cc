@@ -377,9 +377,9 @@ void Signal::ReadExternalEField(
                 //   last time stamp we're looking for, end the loop
                 break;
             }
-            this_efx *= (2.998e10 / 1e6); // from statV/cm to V/m
-            this_efy *= (2.998e10 / 1e6); // from statV/cm to V/m
-            this_efz *= (2.998e10 / 1e6); // from statV/cm to V/m
+            // this_efx *= (2.998e10 / 1e6); // from statV/cm to V/m
+            // this_efy *= (2.998e10 / 1e6); // from statV/cm to V/m
+            // this_efz *= (2.998e10 / 1e6); // from statV/cm to V/m
             double ef_magnitude = pow( (
               pow(this_efx,2) + pow(this_efy,2) + pow(this_efz,2) 
             ), 0.5);
