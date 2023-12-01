@@ -529,6 +529,13 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                     // cout << i << " : " << j << " : " << k << endl;
 
                     RayStep.clear();    // remove previous values
+                    if (settings1->EVENT_TYPE == 20) {
+                        event->Nu_Interaction[0].posnu = Position(Vector(
+                            detector->stations[i].strings[j].antennas[k].GetX()-1,
+                            detector->stations[i].strings[j].antennas[k].GetY()-1,
+                            detector->stations[i].strings[j].antennas[k].GetZ()-1
+                        ));
+                    }
                     raysolver->Solve_Ray(event->Nu_Interaction[0].posnu, detector->stations[i].strings[j].antennas[k], icemodel, ray_output, settings1, RayStep);   // solve ray between source and antenna
 
                     ray_sol_cnt = 0;
