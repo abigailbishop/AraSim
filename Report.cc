@@ -1667,7 +1667,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                 settings1->EXT_EFIELD_DIR, 
                                                 "s" + std::to_string(j) + "a" + std::to_string(k), 
                                                 T_forint[settings1->NFOUR/2 -1] - T_forint[0],
-                                                Pol_vector, max_efield, settings1
+                                                max_efield, settings1
                                             );
 
                                             // Generate signals, propagate, send through antennas, 
@@ -1707,6 +1707,9 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                 //     (will be adjusted later for gain/viewing angle/etc later)
                                                 int waveform_bin = (int) signal->PulserWaveform_V.size();
                                                 double V_forfft[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
+                                                double Vx_forfft[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
+                                                double Vy_forfft[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
+                                                double Vz_forfft[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
                                                 double T_forfft[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
                                                 for (int n = 0; n < stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]; n++) { // Loop over bins
                                                     // Save raw signal voltage and time to Vm_zoom
@@ -1729,9 +1732,21 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                         V_forfft[n] = signal->PulserWaveform_V[
                                                             n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
                                                         ];
+                                                        Vx_forfft[n] = signal->external_efield_x[
+                                                            n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
+                                                        ];
+                                                        Vy_forfft[n] = signal->external_efield_y[
+                                                            n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
+                                                        ];
+                                                        Vz_forfft[n] = signal->external_efield_z[
+                                                            n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
+                                                        ];
                                                     }
                                                     else { // This bin is outside the center of the array, zero pad
                                                         V_forfft[n] = 0.;
+                                                        Vx_forfft[n] = 0.;
+                                                        Vy_forfft[n] = 0.;
+                                                        Vz_forfft[n] = 0.;
                                                     }
                                                 } // end loop over bins, populating time and voltage arrays                                    
 
@@ -1745,7 +1760,10 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                 // without any phase consideration, apply same factor to both real, img parts
 
                                                 // Get frequency spectrum with the zero padded WF
-                                                Tools::realft(V_forfft, 1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]);   
+                                                Tools::realft(V_forfft, 1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]); 
+                                                Tools::realft(Vx_forfft, 1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]);  
+                                                Tools::realft(Vy_forfft, 1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]);  
+                                                Tools::realft(Vz_forfft, 1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]);    
                                                 
                                                 // Calclulate Antenna Effective Height in the last bin                                         
                                                 dF_Nnew = 1. / ((double)(stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]) *(dT_forfft) *1.e-9); // in Hz
@@ -1876,6 +1894,20 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                         }
                                                     } // end calculate antenna effective height
                                                     stations[i].strings[j].antennas[k].Heff[ray_sol_cnt].push_back(heff);
+
+                                                    // Calculate polarization vector at this frequency bin
+                                                    double V_magnitude_first = pow( (
+                                                        pow(Vx_forfft[2*n],2) + pow(Vy_forfft[2*n],2) + pow(Vz_forfft[2*n],2)
+                                                    ), 0.5 );
+                                                    double V_magnitude_second = pow( (
+                                                        pow(Vx_forfft[2*n + 1],2) + pow(Vy_forfft[2*n + 1],2) + pow(Vz_forfft[2*n + 1],2)
+                                                    ), 0.5 );
+                                                    double V_magnitude = 0.5*( V_magnitude_first + V_magnitude_second );
+                                                    Pol_vector = Vector(
+                                                        0.5*( Vx_forfft[2*n] + Vx_forfft[2*n + 1] ) / V_magnitude,
+                                                        0.5*( Vy_forfft[2*n] + Vy_forfft[2*n + 1] ) / V_magnitude,
+                                                        0.5*( Vz_forfft[2*n] + Vz_forfft[2*n + 1] ) / V_magnitude
+                                                    );
 
                                                     // Apply antenna factors to voltage response
                                                     // Includes antenna phase (1D), effective height, signal polarization, antenna direction

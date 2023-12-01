@@ -187,10 +187,13 @@ double changle; // cherenkov angle
   std::vector<double> PulserWaveform_T;
   void ReadPulserWaveform(std::string target);
 
+  std::vector<double> external_efield_t;
+  std::vector<double> external_efield_x;
+  std::vector<double> external_efield_y;
+  std::vector<double> external_efield_z;
   void ReadExternalEField(
       std::string directory, std::string antenna, 
-      double time_window,
-      Vector &Pol_vector, double &max_efield, 
+      double time_window, double &max_efield, 
       Settings *settings1
   );
 
