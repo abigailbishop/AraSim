@@ -1896,18 +1896,16 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                     stations[i].strings[j].antennas[k].Heff[ray_sol_cnt].push_back(heff);
 
                                                     // Calculate polarization vector at this frequency bin
-                                                    double V_magnitude_first = pow( (
-                                                        pow(Vx_forfft[2*n],2) + pow(Vy_forfft[2*n],2) + pow(Vz_forfft[2*n],2)
-                                                    ), 0.5 );
-                                                    double V_magnitude_second = pow( (
-                                                        pow(Vx_forfft[2*n + 1],2) + pow(Vy_forfft[2*n + 1],2) + pow(Vz_forfft[2*n + 1],2)
-                                                    ), 0.5 );
-                                                    double V_magnitude = 0.5*( V_magnitude_first + V_magnitude_second );
+                                                    // [2*n] element is the real result, [2*n+1] is the imaginary result
+                                                    double V_x = pow( (pow(Vx_forfft[2*n],2) + pow(Vx_forfft[2*n+1],2)) , 0.5); 
+                                                    double V_y = pow( (pow(Vy_forfft[2*n],2) + pow(Vy_forfft[2*n+1],2)) , 0.5);
+                                                    double V_z = pow( (pow(Vz_forfft[2*n],2) + pow(Vz_forfft[2*n+1],2)) , 0.5);
+                                                    double V_magnitude = pow( ( pow(V_x,2) + pow(V_y,2) + pow(V_z,2) ), 0.5);
                                                     Pol_vector = Vector(
-                                                        0.5*( Vx_forfft[2*n] + Vx_forfft[2*n + 1] ) / V_magnitude,
-                                                        0.5*( Vy_forfft[2*n] + Vy_forfft[2*n + 1] ) / V_magnitude,
-                                                        0.5*( Vz_forfft[2*n] + Vz_forfft[2*n + 1] ) / V_magnitude
+                                                        V_x / V_magnitude, V_y / V_magnitude, V_z / V_magnitude
                                                     );
+                                                    // Krijn worries this doesn't capture circular polarization properly
+                                                    // get this in time space then ft that
 
                                                     // Apply antenna factors to voltage response
                                                     // Includes antenna phase (1D), effective height, signal polarization, antenna direction
