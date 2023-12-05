@@ -1915,9 +1915,9 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                     // Calculate polarization vector at this frequency bin
                                                     // [2*n] element is the real result, [2*n+1] is the imaginary result
                                                     Pol_vector = Vector(
-                                                        pow(pol_x_forfft[2*n],2) + pow(pol_x_forfft[2*n+1],2), 
-                                                        pow(pol_y_forfft[2*n],2) + pow(pol_y_forfft[2*n+1],2),
-                                                        pow(pol_z_forfft[2*n],2) + pow(pol_z_forfft[2*n+1],2)
+                                                        pow( pow(pol_x_forfft[2*n],2) + pow(pol_x_forfft[2*n+1],2), 0.5), 
+                                                        pow( pow(pol_y_forfft[2*n],2) + pow(pol_y_forfft[2*n+1],2), 0.5), 
+                                                        pow( pow(pol_z_forfft[2*n],2) + pow(pol_z_forfft[2*n+1],2), 0.5)
                                                     );
 
                                                     // Apply antenna factors to voltage response
