@@ -1918,7 +1918,10 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                         pow( pow(pol_x_forfft[2*n],2) + pow(pol_x_forfft[2*n+1],2), 0.5), 
                                                         pow( pow(pol_y_forfft[2*n],2) + pow(pol_y_forfft[2*n+1],2), 0.5), 
                                                         pow( pow(pol_z_forfft[2*n],2) + pow(pol_z_forfft[2*n+1],2), 0.5)
-                                                    );
+                                                    ).Unit();
+                                                    // cout<<pow( pow(pol_x_forfft[2*n],2) + pow(pol_x_forfft[2*n+1],2), 0.5)<<"  ";
+                                                    // cout<<pow( pow(pol_y_forfft[2*n],2) + pow(pol_y_forfft[2*n+1],2), 0.5)<<"  ";
+                                                    // cout<<pow( pow(pol_z_forfft[2*n],2) + pow(pol_z_forfft[2*n+1],2), 0.5)<<endl;
 
                                                     // Apply antenna factors to voltage response
                                                     // Includes antenna phase (1D), effective height, signal polarization, antenna direction
