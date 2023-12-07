@@ -1666,7 +1666,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                             signal->ReadExternalEField(
                                                 settings1->EXT_EFIELD_DIR, 
                                                 "s" + std::to_string(j) + "a" + std::to_string(k), 
-                                                T_forint[settings1->NFOUR/2 -1] - T_forint[0],
+                                                T_forint[settings1->NFOUR/2 -1] - T_forint[0], // last element minus first element
                                                 max_efield, settings1
                                             );
 
@@ -1707,9 +1707,9 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                 //     (will be adjusted later for gain/viewing angle/etc later)
                                                 int waveform_bin = (int) signal->PulserWaveform_V.size();
                                                 double V_forfft[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
-                                                double pol_x_forfft[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
-                                                double pol_y_forfft[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
-                                                double pol_z_forfft[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
+                                                double pol_x[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
+                                                double pol_y[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
+                                                double pol_z[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
                                                 double T_forfft[stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]];
                                                 for (int n = 0; n < stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]; n++) { // Loop over bins
                                                     // Save raw signal voltage and time to Vm_zoom
@@ -1725,7 +1725,16 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                     );
 
                                                     // Fill voltage array for this bin
-                                                    if (
+                                                    if ( 
+                                                        ( n < stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]* 1/100 ) || 
+                                                        ( n > stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]*99/100 ) ) 
+                                                    { // This bin is in the first 1% or last 1% of the waveform, set to 0 for zero padding
+                                                        V_forfft[n] = 0.;
+                                                        pol_x[n] = 0.;
+                                                        pol_y[n] = 0.;
+                                                        pol_z[n] = 0.;
+                                                    }
+                                                    else if (
                                                         (n >= stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2) &&
                                                         (n <  stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 + waveform_bin / 2)
                                                     ){ // This bin is in the center of the array, populate with raw signal voltage
@@ -1747,21 +1756,21 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                         V_forfft[n] = signal->PulserWaveform_V[
                                                             n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
                                                         ];
-                                                        pol_x_forfft[n] = signal->external_efield_x[
+                                                        pol_x[n] = signal->external_efield_x[
                                                             n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
                                                         ] / efield_magnitude;
-                                                        pol_y_forfft[n] = signal->external_efield_y[
+                                                        pol_y[n] = signal->external_efield_y[
                                                             n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
                                                         ] / efield_magnitude;
-                                                        pol_z_forfft[n] = signal->external_efield_z[
+                                                        pol_z[n] = signal->external_efield_z[
                                                             n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
                                                         ] / efield_magnitude;
                                                     }
                                                     else { // This bin is outside the center of the array, zero pad
                                                         V_forfft[n] = 0.;
-                                                        pol_x_forfft[n] = 0.;
-                                                        pol_y_forfft[n] = 0.;
-                                                        pol_z_forfft[n] = 0.;
+                                                        pol_x[n] = 0.;
+                                                        pol_y[n] = 0.;
+                                                        pol_z[n] = 0.;
                                                     }
                                                 } // end loop over bins, populating time and voltage arrays                                    
 
@@ -1770,17 +1779,25 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                     FindPeak(V_forfft, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt])
                                                 );
 
+                                                // Apply polarization at each time step
+                                                double Pol_factor = 1.;
+                                                for (int n = 0; n < stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]; n++) { // Loop over bins
+                                                    if ( V_forfft[n] == 0. ) continue; // if signal is 0, skip
+                                                    Pol_vector = Vector(pol_x[n], pol_y[n], pol_z[n]).Unit();
+                                                    Pol_factor = calculatePolFactor(
+                                                        Pol_vector,
+                                                        detector->stations[i].strings[j].antennas[k].type, 
+                                                        antenna_theta, antenna_phi
+                                                    );
+                                                    V_forfft[n] *= Pol_factor;
+                                                }
+
                                                 // this forward fft volts_forfft is now in unit of V at each freq 
                                                 // we can just apply each bin's gain factor to each freq bins
                                                 // without any phase consideration, apply same factor to both real, img parts
 
                                                 // Get frequency spectrum with the zero padded WF
                                                 Tools::realft(V_forfft, 1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]); 
-
-                                                // Fourier transform the x y and z components of the polarization
-                                                Tools::realft(pol_x_forfft, 1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]);  
-                                                Tools::realft(pol_y_forfft, 1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]);  
-                                                Tools::realft(pol_z_forfft, 1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]);    
                                                 
                                                 // Calclulate Antenna Effective Height in the last bin                                         
                                                 dF_Nnew = 1. / ((double)(stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]) *(dT_forfft) *1.e-9); // in Hz
@@ -1912,16 +1929,10 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                     } // end calculate antenna effective height
                                                     stations[i].strings[j].antennas[k].Heff[ray_sol_cnt].push_back(heff);
 
-                                                    // Calculate polarization vector at this frequency bin
-                                                    // [2*n] element is the real result, [2*n+1] is the imaginary result
-                                                    Pol_vector = Vector(
-                                                        pow( pow(pol_x_forfft[2*n],2) + pow(pol_x_forfft[2*n+1],2), 0.5), 
-                                                        pow( pow(pol_y_forfft[2*n],2) + pow(pol_y_forfft[2*n+1],2), 0.5), 
-                                                        pow( pow(pol_z_forfft[2*n],2) + pow(pol_z_forfft[2*n+1],2), 0.5)
-                                                    ).Unit();
-                                                    // cout<<pow( pow(pol_x_forfft[2*n],2) + pow(pol_x_forfft[2*n+1],2), 0.5)<<"  ";
-                                                    // cout<<pow( pow(pol_y_forfft[2*n],2) + pow(pol_y_forfft[2*n+1],2), 0.5)<<"  ";
-                                                    // cout<<pow( pow(pol_z_forfft[2*n],2) + pow(pol_z_forfft[2*n+1],2), 0.5)<<endl;
+                                                    // Tell ApplyAntFactors* to not recalculate the polarization factor
+                                                    //   since it's already been applied with the special flag value -1234
+                                                    Pol_factor = -1234.; 
+                                                    Pol_vector = Vector(1,1,1); // Shouldn't be used in any calculations but set to unity just in case
 
                                                     // Apply antenna factors to voltage response
                                                     // Includes antenna phase (1D), effective height, signal polarization, antenna direction
@@ -5027,7 +5038,15 @@ double Report::calculatePolFactor(Vector &Pol_vector, int ant_type, double anten
 void Report::ApplyAntFactors(double heff, Vector &n_trg_pokey, Vector &n_trg_slappy, Vector &Pol_vector, int ant_type, double &pol_factor, double &vmmhz, double antenna_theta, double antenna_phi) {  // vmmhz is input and output. output will have some antenna factors on it
 
     //double pol_factor;
-    pol_factor = calculatePolFactor(Pol_vector, ant_type, antenna_theta, antenna_phi);
+    if ( pol_factor == -1234. ){
+        // -1234 is a flag signaling that we aren't applying a polarization 
+        //   factor or that it has already been applied. 
+        //   Set this to 1 so it has no effect.
+        pol_factor = 1;
+    }
+    else {
+        pol_factor = calculatePolFactor(Pol_vector, ant_type, antenna_theta, antenna_phi);
+    }
 
     // apply 3dB spliter, d nu to prepare FFT
     // now actually vmmhz is not V/m/MHz but V/m/Hz unit
@@ -5045,7 +5064,7 @@ void Report::ApplyAntFactors(double heff, Vector &n_trg_pokey, Vector &n_trg_sla
 
 
 
-void Report::ApplyAntFactors_Tdomain (double AntPhase, double heff, Vector &n_trg_pokey, Vector &n_trg_slappy, Vector &Pol_vector, int ant_type, double &pol_factor, double &vm_real, double &vm_img, Settings *settings1, double antenna_theta, double antenna_phi, bool useInTransmitterMode) {  // vm is input and output. output will have some antenna factors on it
+void Report::ApplyAntFactors_Tdomain (double AntPhase, double heff, Vector &s, Vector &n_trg_slappy, Vector &Pol_vector, int ant_type, double &pol_factor, double &vm_real, double &vm_img, Settings *settings1, double antenna_theta, double antenna_phi, bool useInTransmitterMode) {  // vm is input and output. output will have some antenna factors on it
 
     // first, work out if we would like to use this function in "transmit" mode
      // which means that when we apply the phase shift, we need to subtract (!!)
@@ -5058,7 +5077,16 @@ void Report::ApplyAntFactors_Tdomain (double AntPhase, double heff, Vector &n_tr
      if(useInTransmitterMode==true){ sign=-1.;};
 
     //double pol_factor;
-    pol_factor = calculatePolFactor(Pol_vector, ant_type, antenna_theta, antenna_phi);
+    if ( pol_factor == -1234. ){
+        // -1234 is a flag signaling that we aren't applying a polarization 
+        //   factor or that it has already been applied. 
+        //   Set this to 1 so it has no effect.
+        pol_factor = 1;
+    }
+    else {
+        pol_factor = calculatePolFactor(Pol_vector, ant_type, antenna_theta, antenna_phi);
+    }
+
     if ( settings1->PHASE_SKIP_MODE != 1 ) {
         double phase_current;
         if ( vm_real != 0. ) {
@@ -5096,7 +5124,15 @@ void Report::ApplyAntFactors_Tdomain (double AntPhase, double heff, Vector &n_tr
 void Report::ApplyAntFactors_Tdomain_FirstTwo (double heff, double heff_lastbin, Vector &n_trg_pokey, Vector &n_trg_slappy, Vector &Pol_vector, int ant_type, double &pol_factor, double &vm_bin0, double &vm_bin1, double antenna_theta, double antenna_phi) {  // vm is input and output. output will have some antenna factors on it
 
     //double pol_factor;
-    pol_factor = calculatePolFactor(Pol_vector, ant_type, antenna_theta, antenna_phi);
+    if ( pol_factor == -1234. ){
+        // -1234 is a flag signaling that we aren't applying a polarization 
+        //   factor or that it has already been applied. 
+        //   Set this to 1 so it has no effect.
+        pol_factor = 1;
+    }
+    else {
+        pol_factor = calculatePolFactor(Pol_vector, ant_type, antenna_theta, antenna_phi);
+    }
 
     vm_bin0 = vm_bin0 / sqrt(2.) * 0.5 * heff * pol_factor; // sqrt(2) for 3dB splitter for TURF, SURF, 0.5 to calculate power with heff
     vm_bin1 = vm_bin1 / sqrt(2.) * 0.5 * heff_lastbin * pol_factor; // sqrt(2) for 3dB splitter for TURF, SURF, 0.5 to calculate power with heff
@@ -5120,7 +5156,15 @@ void Report::InvertAntFactors_Tdomain (double AntPhase, double heff, Vector &Pol
      // if(useInTransmitterMode==true){ sign=-1.;}; //commenting out for debugging -JCF 7/05/2023
 
     //double pol_factor;
-    pol_factor = calculatePolFactor(Pol_vector, ant_type, antenna_theta, antenna_phi);
+    if ( pol_factor == -1234. ){
+        // -1234 is a flag signaling that we aren't applying a polarization 
+        //   factor or that it has already been applied. 
+        //   Set this to 1 so it has no effect.
+        pol_factor = 1;
+    }
+    else {
+        pol_factor = calculatePolFactor(Pol_vector, ant_type, antenna_theta, antenna_phi);
+    }
     if (true) {
         double phase_current;
         // cout << "ccccccc" << endl;
@@ -5183,8 +5227,16 @@ void Report::InvertAntFactors_Tdomain (double AntPhase, double heff, Vector &Pol
 
 void Report::InvertAntFactors_Tdomain_FirstTwo (double heff, double heff_lastbin, Vector &Pol_vector, int ant_type, double &pol_factor, double &vm_bin0, double &vm_bin1, double antenna_theta, double antenna_phi) {  // vm is input and output. output will have some antenna factors on it
 
-    //double pol_factor;
-    pol_factor = calculatePolFactor(Pol_vector, ant_type, antenna_theta, antenna_phi);
+    //double pol_factor;    
+    if ( pol_factor == -1234. ){
+        // -1234 is a flag signaling that we aren't applying a polarization 
+        //   factor or that it has already been applied. 
+        //   Set this to 1 so it has no effect.
+        pol_factor = 1;
+    }
+    else {
+        pol_factor = calculatePolFactor(Pol_vector, ant_type, antenna_theta, antenna_phi);
+    }
 
     vm_bin0 = vm_bin0 / sqrt(2.) * 0.5 * heff * pol_factor; // sqrt(2) for 3dB splitter for TURF, SURF, 0.5 to calculate power with heff
     vm_bin1 = vm_bin1 / sqrt(2.) * 0.5 * heff_lastbin * pol_factor; // sqrt(2) for 3dB splitter for TURF, SURF, 0.5 to calculate power with heff
