@@ -186,6 +186,10 @@ double changle; // cherenkov angle
   std::vector<double> PulserWaveform_V;
   std::vector<double> PulserWaveform_T;
   void ReadPulserWaveform(std::string target);
+    
+  std::vector<double> InputVoltage_V;
+  std::vector<double> InputVoltage_T;    
+  void ReadInputVoltage(std::string target);  //Adding function to read input voltage at transmitting antenna - JCF 1/10/2024
 
   std::vector<double> external_efield_t;
   std::vector<double> external_efield_x;

@@ -39,6 +39,8 @@ class Settings
   //These were moved here from IceModel under the new compilation scheme
         int ICE_MODEL; //Select ice model to be used.  0 = Crust 2.0 , 1 = BEDMAP.
         int NOFZ; // 1=depth dependent index of refraction,0=off
+	int BIREFRINGENCE; //To activate birefringence
+	int BIAXIAL; //Biaxial (1) or Uniaxial (0) birefringence
         int CONSTANTCRUST; // set crust density and thickness to constant values.
         int CONSTANTICETHICKNESS; // set ice thickness to constant value
         int FIXEDELEVATION; // fix the elevation to the thickness of ice.
@@ -308,7 +310,22 @@ class Settings
                        // 2: use the ARIANNA wipld LPDA responses instead
                        // 3: use the chiba xfdtd models (treats top and bottom as the same)
                        // 4: use the chiba in-situ models (treats top and bottom as the same)
+                       // 5: use the Kansas lab measurements that treat top and bottom vpol separately.
+                       // 6: Uses custom antenna models that the user can specify with the custom files in data/antennas/realizedGain
                        // The related wiki page for antenna models description:http://ara.icecube.wisc.edu/wiki/index.php/Antenna_model
+                       
+   //Impedances of RX and TX antennas.  All use the numbering scheme below:
+                       // 0: Simple 50 Ohm impedance model that matches the Zr=50 that's been historically used in AraSim
+                       // 1: Bottom VPol impedance model measured by Mohammad at Kansas
+                       // 2: Top Vpol impedance model measured by Mohammad at Kansas
+                       // 3: Hpol impedance model measured by Mohammad at Kansas
+                       // 4: PVA Antennna impedance (SPICE) measured by Mohammad at Kansas
+                       // 5-9: Custom impedance model dictated by data/antenna/Impedance_Custom<1-4>.txt
+   int IMPEDANCE_RX_VPOL; // 0: Default: See above
+   int IMPEDANCE_RX_VPOL_TOP; // 0: Default: See above
+   int IMPEDANCE_RX_HPOL; // 0: Default: see above
+   int IMPEDANCE_TX; //4: Default: see above
+   
 
 	int APPLY_NOISE_FIGURE; // 0: do not apply new noise figure from Thomas Meures 2016
 	                        // 1: apply new noise figure to data
