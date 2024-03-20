@@ -7292,6 +7292,13 @@ void Report::checkPATrigger(
                     cout<<"Weight for Second Ray trigger is: "<<event->Nu_Interaction[0].weight<<endl;
                     break;
                 }
+                hasTriggered = true;
+
+            }//end efficiency if
+
+            // Save information to output file
+            if ( hasTriggered || (settings1->FILL_TREE_MODE<2) ) {
+                
                 viewAngle = viewangle;
                 my_averageSNR = avgSnr;
                 my_raysol = raySolNum;
@@ -7299,6 +7306,7 @@ void Report::checkPATrigger(
                 int last_trig_bin = signalbinPA;
                 int my_ch_id = 0;
                 stations[i].Global_Pass = last_trig_bin;
+
                 for (size_t str = 0; str < detector->stations[i].strings.size(); str++) {
                     for (size_t ant = 0; ant < detector->stations[i].strings[str].antennas.size(); ant++) {
                         double peakvalue = 0;
@@ -7318,9 +7326,7 @@ void Report::checkPATrigger(
                     }//end ant
                 }//end detector
 
-                hasTriggered = true;
-
-            }//end efficiency if
+            } // End save event if
 
         }//end avgsnr if
 
