@@ -2160,6 +2160,299 @@ Detector::Detector(Settings * settings1, IceModel * icesurface, string setupfile
 
     } // if mode == 5
 
+    /////////////////////////////////////////////////////////////////////////////////    
+    else if (mode == 20) {
+        cout << "\n\tDector mode 2 : Pentagon" << endl;
+        cout << "\n\tBy default, ARA-37 is set" << endl;
+        ifstream ARA37(ARA37_file.c_str());
+        cout << "We use " << ARA37_file.c_str() << " as antenna info." << endl;
+
+        //
+        // initialize info
+        params.number_of_stations = settings1->number_of_stations;
+        params.number_of_strings_station = 4; // ARA-1 has 4 strings
+        params.number_of_antennas_string = 4; // 4 antennas on each strings
+        params.number_of_surfaces_station = 4;
+
+        //double core_x = 0.;  // all units are in meter
+        //double core_y = 0.;
+        params.core_x = 10000.; // all units are in meter
+        params.core_y = 10000.;
+        // double R_string = 10.;
+        // double R_surface = 60.;
+        // double z_max = 200.;
+        // double z_btw = 10.;
+        // double z_btw_array[6]; // assume there will be less than 6 bore hole antennas at each string
+        // // these z_btw array will be used when settings->BH_ANT_SEP_DIST_ON=1 case
+        // for (int i = 0; i < 6; i++) {
+        //     if (i == 0) z_btw_array[i] = 0.;
+        //     //else z_btw_array[i] = z_btw;
+        //     else if (i == 1) z_btw_array[i] = 2.;
+        //     else if (i == 2) z_btw_array[i] = 15.;
+        //     else if (i == 3) z_btw_array[i] = 2.;
+        //     else z_btw_array[i] = z_btw;
+        // }
+        // double z_btw_total;
+        params.stations_per_side = 4; // total 37 stations
+        params.station_spacing = 2000.; // 2km spacing
+        params.antenna_orientation = 0; // all antenna facing x
+        params.bore_hole_antenna_layout = settings1 -> BORE_HOLE_ANTENNA_LAYOUT;
+        params.core_x = 10000.; // all units are in meter
+        params.core_y = 10000.;
+        // finish initialization
+        //
+
+        // Read new parameters if there are...
+        if (ARA37.is_open()) {
+            while (ARA37.good()) {
+                getline(ARA37, line);
+
+                if (line[0] != "/" [0]) {
+                    label = line.substr(0, line.find_first_of("="));
+
+                    if (label == "core_x") {
+                        params.core_x = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read core_x" << endl;
+                    } else if (label == "core_y") {
+                        params.core_y = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read core_y" << endl;
+                    } else if (label == "R_string") {
+                        R_string = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read R_string" << endl;
+                    } else if (label == "R_surface") {
+                        R_surface = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read R_surface" << endl;
+                    } else if (label == "z_max") {
+                        z_max = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read z_max" << endl;
+                    } else if (label == "z_btw") {
+                        z_btw = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read z_btw" << endl;
+                    } else if (label == "z_btw01") {
+                        z_btw_array[1] = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read z_btw bh ant0 and ant1" << endl;
+                    } else if (label == "z_btw12") {
+                        z_btw_array[2] = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read z_btw bh ant1 and ant2" << endl;
+                    } else if (label == "z_btw23") {
+                        z_btw_array[3] = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read z_btw bh ant2 and ant3" << endl;
+                    } else if (label == "z_btw34") {
+                        z_btw_array[4] = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read z_btw bh ant3 and ant4" << endl;
+                    } else if (label == "z_btw45") {
+                        z_btw_array[5] = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read z_btw bh ant4 and ant5" << endl;
+                    } else if (label == "stations_per_side") {
+                        params.stations_per_side = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read stations_per_side" << endl;
+                    } else if (label == "station_spacing") {
+                        params.station_spacing = atof(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read station_spacting" << endl;
+                    } else if (label == "antenna_orientation") {
+                        params.antenna_orientation = atoi(line.substr(line.find_first_of("=") + 1).c_str());
+                        cout << "read antenna_orientation" << endl;
+                    }
+                }
+            }
+            ARA37.close();
+        }
+        // finished reading new parameters
+
+        // set number of antennas in a string
+        if (params.bore_hole_antenna_layout == 0) { // VHVH layout
+            params.number_of_antennas_string = 4;
+        } else if (params.bore_hole_antenna_layout == 1) { // VHV layout
+            params.number_of_antennas_string = 3;
+        } else if (params.bore_hole_antenna_layout == 2) { // VHVV layout
+            params.number_of_antennas_string = 4;
+        } else if (params.bore_hole_antenna_layout == 3) { // VHHH layout
+            params.number_of_antennas_string = 4;
+        } else if (params.bore_hole_antenna_layout == 4) { // VHH layout
+            params.number_of_antennas_string = 3;
+        }
+
+        //
+        // caculate number of stations, strings, antennas 
+        // params.number_of_stations = 1 + (3 * params.stations_per_side) * (params.stations_per_side - 1);
+
+        params.number_of_strings = params.number_of_stations * params.number_of_strings_station;
+        params.number_of_antennas = params.number_of_strings * params.number_of_antennas_string;
+        // 
+
+        //
+        // prepare vectors
+        for (int i = 0; i < params.number_of_stations; i++) {
+            stations.push_back(temp_station);
+
+            for (int j = 0; j < params.number_of_surfaces_station; j++) {
+                stations[i].surfaces.push_back(temp_surface);
+            }
+
+            for (int k = 0; k < params.number_of_strings_station; k++) {
+                stations[i].strings.push_back(temp_string);
+
+                for (int l = 0; l < params.number_of_antennas_string; l++) {
+                    stations[i].strings[k].antennas.push_back(temp_antenna);
+                }
+
+            }
+
+        }
+        // end perpare vectors
+        //
+
+        //
+        // for ARA-37 (or more than 1 station case), need code for setting position for all 37 stations here!
+        //
+        //
+        // here, this only works for pentagon shape!
+        //
+        // double y_offset = (double) params.station_spacing * sqrt(3) / 2.;
+
+        // int station_count = 0;
+
+        // for (int irow = 0; irow < ((int) params.stations_per_side * 2) - 1; irow++) {
+        //     double current_y = y_offset * ((double) params.stations_per_side - 1 - irow) + params.core_y;
+        //     int stations_this_row = (2 * (int) params.stations_per_side - 1) - abs((int) params.stations_per_side - 1 - irow);
+
+        //     for (int istation = 0; istation < stations_this_row; istation++) {
+        //         if (station_count < (int) params.number_of_stations) {
+        //             stations[station_count].SetY(current_y);
+        //             stations[station_count].SetX((double) params.station_spacing * ((double) istation - ((double) stations_this_row - 1.) / 2.) + params.core_x);
+        //             station_count++;
+        //         } else {
+        //             cout << "\n\tError, too many stations !" << endl;
+        //         }
+        //     }
+        // }
+        // finished setting all stations' position
+
+        // cout << "total station_count : " << station_count << endl;
+        // if (station_count != (int) params.number_of_stations) cout << "\n\tError, station number not match !" << endl;
+
+        // set antenna values from parameters
+        // set station positions
+        for (int i = 0; i < params.number_of_stations; i++) {
+
+            stations[i].SetX( params.core_x );
+            stations[i].SetY( params.core_y );
+
+            // set string postions based on station position
+            //            for (int j=0; j<params.number_of_strings_station; j++) {
+            //            stations[i].string[0].x = stations[i].x - (R_string / 1.414);
+            stations[i].strings[0].SetX(stations[i].GetX() - i);
+            stations[i].strings[0].SetY(stations[i].GetY() + i);
+
+            stations[i].strings[1].SetX(stations[i].GetX() + i);
+            stations[i].strings[1].SetY(stations[i].GetY() + i);
+
+            stations[i].strings[2].SetX(stations[i].GetX() - i);
+            stations[i].strings[2].SetY(stations[i].GetY() - i);
+
+            stations[i].strings[3].SetX(stations[i].GetX() + i);
+            stations[i].strings[3].SetY(stations[i].GetY() - i);
+            
+            for (int j = 0; j < params.number_of_strings_station; j++) {
+                for (int k = 0; k < params.number_of_antennas_string; k++) {
+
+                    stations[i].strings[j].antennas[k].SetZ(-100);
+
+                    if (k % 2 == 0) {
+                        stations[i].strings[j].antennas[k].type = 0; // v-pol
+                    } else {
+                        stations[i].strings[j].antennas[k].type = 1; // h-pol
+                    }
+
+                    if (params.antenna_orientation == 0) { // all borehole antennas facing same x
+                        stations[i].strings[j].antennas[k].orient = 0;
+                    } else if (params.antenna_orientation == 1) { // borehole antennas one next facing different way
+                        if (j == 0 || j == 3) {
+                            if (k == 0 || k == 1) {
+                                stations[i].strings[j].antennas[k].orient = 0;
+                            } else {
+                                stations[i].strings[j].antennas[k].orient = 1;
+                            }
+                        } else {
+                            if (k == 0 || k == 1) {
+                                stations[i].strings[j].antennas[k].orient = 1;
+                            } else {
+                                stations[i].strings[j].antennas[k].orient = 0;
+                            }
+                        }
+
+                    } // end facing different. I know it only works with 4 strings, 4 antennas on each strings but couldn't find a better way than this. -Eugene
+
+                }
+            }
+
+
+            // //
+            // // set surface antenna postions
+            // stations[i].surfaces[0].SetX(stations[i].GetX() + (R_surface * cos(PI / 3.)));
+            // stations[i].surfaces[0].SetY(stations[i].GetY() + (R_surface * sin(PI / 3.)));
+
+            // stations[i].surfaces[1].SetX(stations[i].GetX() + (R_surface * cos(-PI / 3.)));
+            // stations[i].surfaces[1].SetY(stations[i].GetY() + (R_surface * sin(-PI / 3.)));
+
+            // stations[i].surfaces[2].SetX(stations[i].GetX() + (R_surface * cos(PI)));
+            // //            stations[i].surfaces[2].y = stations[i].y + (R_surface * sin(PI));
+            // stations[i].surfaces[2].SetY(stations[i].GetY());
+
+            // stations[i].surfaces[3].SetX(stations[i].GetX());
+            // stations[i].surfaces[3].SetY(stations[i].GetY());
+
+            stations[i].number_of_antennas = params.number_of_strings_station * params.number_of_antennas_string;
+
+        } // loop over stations i
+
+        // for idealized geometry, number of antennas in a station is constant
+        max_number_of_antennas_station = params.number_of_strings_station * params.number_of_antennas_string;
+
+        ReadAllAntennaGains(settings1);
+        ReadAllAntennaImpedance(settings1);
+
+        //	if (settings1->NOISE==2){
+        ReadNoiseFigure("./data/ARA02_noiseFig.txt", settings1);
+        //	}
+
+        ReadFilter("./data/filter.csv", settings1);
+        // read preamp gain file!!
+        ReadPreamp("./data/preamp.csv", settings1);
+        // read FOAM gain file!!
+        ReadFOAM("./data/FOAM.csv", settings1);
+        // read gain offset for chs file!!
+        ReadGainOffset_TestBed("./data/preamp_ch_gain_offset.csv", settings1); // only TestBed for now
+        // read threshold offset for chs file!!
+        ReadThresOffset_TestBed("./data/threshold_offset.csv", settings1); // only TestBed for now
+        // read threshold values for chs file
+        ReadThres_TestBed("./data/thresholds_TB.csv", settings1); // only TestBed for now
+        // read system temperature for chs file!!
+
+        cout << "check read temp testbed 2" << endl;
+        if (settings1 -> NOISE_CHANNEL_MODE != 0) {
+            ReadTemp_TestBed("./data/system_temperature.csv", settings1); // only TestBed for now
+        }
+        // read total elec. chain response file!!
+        cout << "start read elect chain" << endl;
+        if (settings1 -> CUSTOM_ELECTRONICS == 0) {
+            //read the standard ARA electronics
+            cout<<"     Reading standard ARA electronics response"<<endl;
+            ReadElectChain("./data/gain/ARA_Electronics_TotalGain_TwoFilters.csv", settings1); //Originally it was the TwoFilters
+          //ReadElectChain("./data/gain/ARA_Electronics_TotalGainPhase.csv", settings1);
+	}
+        else if (settings1->CUSTOM_ELECTRONICS==1){
+            //read a custom user defined electronics gain
+            cout<<"     Reading custom electronics response"<<endl;
+             ReadElectChain("./data/gain/custom_electronics.csv", settings1);
+
+        }
+
+	cout<<"     Reading standard trigger formation values"<<endl;
+	ReadTrig_Delays_Masking("./data/trigger/delays_masking_custom.csv", settings1);
+
+    } // if mode == 20
+
     /////////////////////////////////////////////////////////////////////////////   
 
     // add additional depth if it's on
