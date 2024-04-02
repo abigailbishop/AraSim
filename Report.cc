@@ -2036,7 +2036,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                             freq_lastbin * 1.e-6, // converted to MHz
                                                             detector, 
                                                             V_forfft[2 *n], V_forfft[2 *n + 1], 
-                                                            gain_ch_no
+                                                            gain_ch_no, settings1
                                                         );
                                                     }
                                                 } // end loop over frequency bins to apply antenna factors and electric chain gain
