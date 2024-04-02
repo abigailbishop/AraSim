@@ -6800,6 +6800,11 @@ void Report::checkPATrigger(
 
             }//end efficiency if
 
+            if ( hasTriggered ){
+                int last_trig_bin = signalbinPA;
+                stations[i].Global_Pass = last_trig_bin;
+            }
+
             // Save information to output file
             if ( hasTriggered || (settings1->FILL_TREE_MODE<2) ) {
                 
@@ -6807,9 +6812,7 @@ void Report::checkPATrigger(
                 my_averageSNR = avgSnr;
                 my_raysol = raySolNum;
                 my_receive_ang = all_receive_ang[raySolNum];
-                int last_trig_bin = signalbinPA;
                 int my_ch_id = 0;
-                stations[i].Global_Pass = last_trig_bin;
 
                 for (size_t str = 0; str < detector->stations[i].strings.size(); str++) {
                     for (size_t ant = 0; ant < detector->stations[i].strings[str].antennas.size(); ant++) {
