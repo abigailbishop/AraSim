@@ -6827,6 +6827,16 @@ void Report::checkPATrigger(
                                 peakvalue = TMath::Abs(trigger->Full_window_V[my_ch_id][bin_value]);
                             }
                             
+                            if (bin == 0) {
+                                for (int m = 0; m < stations[i].strings[str].antennas[ant].ray_sol_cnt; m++) { ///< calculates time of center of each rays signal based on readout window time config
+                                    double signal_center_offset = (double)(stations[i].strings[str].antennas[ant].SignalBin[m] - stations[i].strings[str].antennas[ant].time[0]) * settings1->TIMESTEP * 1.e9;
+                                    double signal_center_time = signal_center_offset + stations[i].strings[str].antennas[ant].time_mimic[0];
+                                    //! signal_center_offset: time offset between beginning of readout window and center of signal
+                                    //! signal_center_time: time of center of signal based on readout window time config
+                                    stations[i].strings[str].antennas[ant].SignalBinTime.push_back(signal_center_time);
+                                }
+                            } 
+                            
                         }//end bin
                         my_ch_id ++;
                         //cout<<" Peak Value for ant "<<ant<<" is "<<peakvalue<<endl;
