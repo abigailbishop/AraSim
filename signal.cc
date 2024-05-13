@@ -366,6 +366,9 @@ void Signal::ReadExternalEField(
     double time_maximum = settings1->EXT_EFIELD_TSHIFT + (time_window/2);
 
     // Read file
+    int line=1;
+    double azimuth = 0;
+    double zenith = 0;
     std::string filename = directory+"/"+antenna;
     ifstream efield_file(filename);
     max_efield = 0;
@@ -377,7 +380,30 @@ void Signal::ReadExternalEField(
     if (efield_file){
 
         // Iterate over each line of the file and extract info
-        while (1) {
+        while (line) {
+
+            // Get the arrival zenith and azimuth from the header of the file
+            // The zenith is between the first "=" and the first ","
+            // The azimuth is from the second "=" to the end of the line
+            // Everything that comes before these data are irrelevant so long
+            //   as you don't include "=" or ","
+            // For example: # Arrival angles of the ray at antenna (in rad) : Theta=0.5622664561847486, Phi=0.4571397473526896
+            if (line == 1){
+                string header;
+                std::getline(efield_file, header);
+                zenith = stod( header.substr(
+                    header.find("=")+1, 
+                    header.find(",")-header.find("=") 
+                ) );
+                azimuth = stod( header.substr(
+                    header.find("=", header.find(",")+1)+1, 
+                    header.length() - header.find("=", header.find(",")+1)
+                ) );
+                cout<<"  Zenith:  "<<zenith<<", Azimuth: "<<azimuth<<endl;
+                header="";
+                line++;
+                continue;
+            }
 
             // Try and read line, exit at first broken line (aka, last line)
             efield_file >> this_time >> this_efx >> this_efy >> this_efz;
@@ -420,6 +446,8 @@ void Signal::ReadExternalEField(
                 max_efield = ef_magnitude;
                 max_efield_time = this_time;
             }
+
+            line++;
 
         }
         cout<<"  Max EField Amplitude: "<<max_efield<<" at "<<max_efield_time<<" ns"<<endl;
