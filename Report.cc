@@ -1768,6 +1768,11 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                         pol_y[n] = signal->external_efield_y[signal_bin] / efield_magnitude;
                                                         pol_z[n] = signal->external_efield_z[signal_bin] / efield_magnitude;
 
+                                                        // If the efield_magnitude is 0, set the polarization of the signal to 0
+                                                        if (pol_x[n] != pol_x[n]) pol_x[n] = 0.;
+                                                        if (pol_y[n] != pol_y[n]) pol_y[n] = 0.;
+                                                        if (pol_z[n] != pol_z[n]) pol_z[n] = 0.;
+
                                                     }
                                                     else { // This bin is outside the center of the array, zero pad
                                                         V_forfft[n] = 0.;
@@ -7153,4 +7158,3 @@ double Report::interpolate(double *xdata,double *ydata, double xi, int numData)
 //Adding function for padding waveforms to take FFT
 
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                          
