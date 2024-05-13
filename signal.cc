@@ -356,6 +356,10 @@ void Signal::ReadExternalEField(
     // Empty the waveform arrays of previous data
     PulserWaveform_T.clear();
     PulserWaveform_V.clear();
+    external_efield_t.clear();
+    external_efield_x.clear();
+    external_efield_y.clear();
+    external_efield_z.clear();
     
     // Determine what times we'll collect electric fields for
     double time_minimum = settings1->EXT_EFIELD_TSHIFT - (time_window/2);
