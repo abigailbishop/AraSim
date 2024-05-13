@@ -1753,32 +1753,21 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                         (n <  stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 + waveform_bin / 2)
                                                     ){ // This bin is in the center of the array, populate with raw signal voltage
 
+                                                       int signal_bin = n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2);
+
                                                         // Calculate the magnitude of the electric field at this time step
                                                         double efield_magnitude = pow( (
-                                                            pow(signal->external_efield_x[
-                                                                n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
-                                                            ], 2) +
-                                                            pow(signal->external_efield_y[
-                                                                n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
-                                                            ], 2) + 
-                                                            pow(signal->external_efield_z[
-                                                                n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
-                                                            ], 2)
+                                                            pow(signal->external_efield_x[signal_bin], 2) +
+                                                            pow(signal->external_efield_y[signal_bin], 2) + 
+                                                            pow(signal->external_efield_z[signal_bin], 2)
                                                         ), 0.5);
 
                                                         // Save Voltage and polarization
-                                                        V_forfft[n] = signal->PulserWaveform_V[
-                                                            n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
-                                                        ];
-                                                        pol_x[n] = signal->external_efield_x[
-                                                            n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
-                                                        ] / efield_magnitude;
-                                                        pol_y[n] = signal->external_efield_y[
-                                                            n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
-                                                        ] / efield_magnitude;
-                                                        pol_z[n] = signal->external_efield_z[
-                                                            n - (stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt] / 2 - waveform_bin / 2)
-                                                        ] / efield_magnitude;
+                                                        V_forfft[n] = signal->PulserWaveform_V[signal_bin];
+                                                        pol_x[n] = signal->external_efield_x[signal_bin] / efield_magnitude;
+                                                        pol_y[n] = signal->external_efield_y[signal_bin] / efield_magnitude;
+                                                        pol_z[n] = signal->external_efield_z[signal_bin] / efield_magnitude;
+
                                                     }
                                                     else { // This bin is outside the center of the array, zero pad
                                                         V_forfft[n] = 0.;
@@ -2042,7 +2031,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                 } // end loop over frequency bins to apply antenna factors and electric chain gain
 
                                                 // Convert V_forfft back to time domain and interpolate
-                                                Tools::realft(V_forfft, -1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]);                                       
+                                                Tools::realft(V_forfft, -1, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt]);                                  
                                                 Tools::SincInterpolation(
                                                     stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt], 
                                                     T_forfft, V_forfft, 
@@ -7164,3 +7153,4 @@ double Report::interpolate(double *xdata,double *ydata, double xi, int numData)
 //Adding function for padding waveforms to take FFT
 
 
+                                                                                                                                                                                                                                                                                                                                                                                                                                          
