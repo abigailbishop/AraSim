@@ -367,8 +367,6 @@ void Signal::ReadExternalEField(
 
     // Read file
     int line=1;
-    double azimuth = 0;
-    double zenith = 0;
     std::string filename = directory+"/"+antenna;
     ifstream efield_file(filename);
     max_efield = 0;
@@ -391,11 +389,11 @@ void Signal::ReadExternalEField(
             if (line == 1){
                 string header;
                 std::getline(efield_file, header);
-                zenith = stod( header.substr(
+                double zenith = stod( header.substr(
                     header.find("=")+1, 
                     header.find(",")-header.find("=") 
                 ) );
-                azimuth = stod( header.substr(
+                double azimuth = stod( header.substr(
                     header.find("=", header.find(",")+1)+1, 
                     header.length() - header.find("=", header.find(",")+1)
                 ) );
