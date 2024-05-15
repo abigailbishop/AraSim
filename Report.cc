@@ -600,33 +600,35 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
 
                             if (debugmode == 0)
                             {
+                                
+                                double max_efield; // used for the external efield simulations
 
                                 if ( settings1->EVENT_TYPE == 20 ){
 
-                                    // set viewangle, launch_vector, receive vectors
-                                    viewangle = ray_output[1][ray_sol_cnt];
-                                    GetParameters(event->Nu_Interaction[0].posnu,   // posnu
-                                        detector->stations[i].strings[j].antennas[k],   // trg antenna
-                                        event->Nu_Interaction[0].nnu,   // nnu
-                                        viewangle,  // inputs launch_angle, returns viewangle
-                                        ray_output[2][ray_sol_cnt], // receive_angle
-                                        launch_vector, receive_vector,
-                                        n_trg_slappy, n_trg_pokey);
+                                    // Get the electric field from the file
+                                    cout<<"String "<<j<<"  Antenna "<<k<<" with "<<ray_output[0].size()<<" solutions"<<endl;
+                                    signal->ReadExternalEField(
+                                        settings1->EXT_EFIELD_DIR, 
+                                        "s" + std::to_string(j) + "a" + std::to_string(k), 
+                                        T_forint[settings1->NFOUR/2 -1] - T_forint[0], // last element minus first element
+                                        max_efield, settings1
+                                    );
 
-                                    // check viewangle that if ray in near Cherenkov cone
-                                    if (viewangle * DEGRAD > 55. && viewangle * DEGRAD < 57.)
-                                    {
-                                        // if viewangle is 56 deg +- 1 deg
-                                        //cout<<"near cone! view angle : "<<viewangle * DEGRAD <<"  station["<<i<<"].string["<<j<<"].antenna["<<k<<"] with  ray_sol_cnt : "<<ray_sol_cnt<<endl;
-                                    }
+                                    // set viewangle, launch_vector, receive vectors (usually done with GetParameters)
+                                    viewangle = signal->CHANGLE_ICE; // aka cherenkov angle
+                                    launch_vector = Vector(0,0,-1); 
+                                    receive_vector = Vector(0,0,-1); //     receive_vector = trg.Rotate( receive_angle, src.Cross(trg) ); receive_vector = receive_vector.Unit();
+                                    n_trg_slappy = Vector(0, 1, 0);
+                                    n_trg_pokey = Vector(1, 0, 0);
 
                                     // store information to report
                                     stations[i].strings[j].antennas[k].view_ang.push_back(viewangle);
-                                    stations[i].strings[j].antennas[k].launch_ang.push_back(ray_output[1][ray_sol_cnt]);
-                                    stations[i].strings[j].antennas[k].rec_ang.push_back(ray_output[2][ray_sol_cnt]);
-                                    stations[i].strings[j].antennas[k].Dist.push_back(ray_output[0][ray_sol_cnt]);
-                                    stations[i].strings[j].antennas[k].L_att.push_back(icemodel->EffectiveAttenuationLength(settings1, event->Nu_Interaction[0].posnu, 0));
-                                    stations[i].strings[j].antennas[k].reflect_ang.push_back(ray_output[3][ray_sol_cnt]);
+                                    stations[i].strings[j].antennas[k].launch_ang.push_back(-PI/2);
+                                    stations[i].strings[j].antennas[k].rec_ang.push_back(0.);
+                                    stations[i].strings[j].antennas[k].Dist.push_back(150.);
+                                    stations[i].strings[j].antennas[k].L_att.push_back(1000.);
+                                    stations[i].strings[j].antennas[k].reflect_ang.push_back(-100.);
+
                                     stations[i].strings[j].antennas[k].vmmhz.resize(ray_sol_cnt + 1);
                                     stations[i].strings[j].antennas[k].Heff.resize(ray_sol_cnt + 1);
                                     stations[i].strings[j].antennas[k].Vm_zoom.resize(ray_sol_cnt + 1);
@@ -635,62 +637,25 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                     stations[i].strings[j].antennas[k].Vfft_noise.resize(ray_sol_cnt + 1);
                                     stations[i].strings[j].antennas[k].V.resize(ray_sol_cnt + 1);
                                     stations[i].strings[j].antennas[k].V_noise.resize(ray_sol_cnt + 1);
-                                    stations[i].strings[j].antennas[k].SignalExt.resize(ray_sol_cnt + 1);
+                                    stations[i].strings[j].antennas[k].SignalExt.resize(ray_sol_cnt + 1);	
 
-                                    // calculate the polarization vector at the source
-                                    Pol_vector = GetPolarization(event->Nu_Interaction[0].nnu, launch_vector);
+                                    // Sets fresnel and transforms Pol_vector from source to antenna, 
+                                    // Pol_vector can be left alone for now (usually done with GetFresnel)
+                                    fresnel = 1.;
 
-                    Vector Pol_vector_src = Pol_vector; //store the src Pol			
+                                    // Set magnification factor to 1 (usually calculated with GetMag)
+                                    mag = 1.;
 
-                                    icemodel->GetFresnel(ray_output[1][ray_sol_cnt],    // launch_angle
-                                        ray_output[2][ray_sol_cnt], // rec_angle
-                                        ray_output[3][ray_sol_cnt], // reflect_angle
-                                        event->Nu_Interaction[0].posnu,
-                                        launch_vector,
-                                        receive_vector,
-                                        settings1,
-                                        fresnel,
-                                        Pol_vector);    // input src Pol and return Pol at trg
-                                    icemodel->GetMag(
-                                        mag, 
-                                        ray_output[0][ray_sol_cnt], // ray path length
-                                        ray_output[1][ray_sol_cnt], // zenith angle of ray at launch
-                                        ray_output[2][ray_sol_cnt], // zenith angle of ray upon receipt
-                                        ray_sol_cnt,
-                                        event->Nu_Interaction[0].posnu, // Neutrino
-                                        detector->stations[i].strings[j].antennas[k], // Antenna
-                                        -0.01, // 1cm antenna shift, inspired from NuRadioMC
-                                        icemodel, settings1
-                                    );
-
-                                    if (ray_output[3][ray_sol_cnt] < PI / 2.)
-                                    {
-                                        // when not reflected at the surface, angle = 100
-                                        stations[i].strings[j].antennas[k].reflection.push_back(1); // say this is reflected ray
-                                    }
-                                    else
-                                    {
-                                        stations[i].strings[j].antennas[k].reflection.push_back(0); // say this is not reflected ray
-                                    }
-
-                                    stations[i].strings[j].antennas[k].Pol_vector.push_back(Pol_vector);    // this Pol_vector is for the target antenna
+                                    // Say that the ray was not reflected
+                                    stations[i].strings[j].antennas[k].reflection.push_back(0);
+                                    
+                                    // Store some variables calculated so far
                                     stations[i].strings[j].antennas[k].Mag.push_back(mag);  // magnification factor
                                     stations[i].strings[j].antennas[k].Fresnel.push_back(fresnel);  // Fresnel factor
-
-                                    vmmhz1m_sum = 0;
 
                                     // get the arrival angle at the antenna, and store the relevant polarization factors
                                     GetAngleAnt(receive_vector, detector->stations[i].strings[j].antennas[k], antenna_theta, antenna_phi);  // get theta, phi for signal ray arrived at antenna
 
-                                    Vector thetaHat = Vector(cos(antenna_theta *(PI / 180)) *cos(antenna_phi *(PI / 180)),
-                                        cos(antenna_theta *(PI / 180)) *sin(antenna_phi *(PI / 180)),
-                                        -sin(antenna_theta *(PI / 180)));
-
-                                    Vector phiHat = Vector(-sin(antenna_phi *(PI / 180)),
-                                        cos(antenna_phi *(PI / 180)),
-                                        0);
-                                    stations[i].strings[j].antennas[k].Pol_factorH.push_back(abs(phiHat *Pol_vector));
-                                    stations[i].strings[j].antennas[k].Pol_factorV.push_back(abs(thetaHat *Pol_vector));
                                     stations[i].strings[j].antennas[k].phi_rec.push_back(antenna_phi *(PI / 180));
                                     stations[i].strings[j].antennas[k].theta_rec.push_back(antenna_theta *(PI / 180));
 
@@ -731,7 +696,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                     stations[i].strings[j].antennas[k].V_noise.resize(ray_sol_cnt + 1);
                                     stations[i].strings[j].antennas[k].SignalExt.resize(ray_sol_cnt + 1);
 
-                                    // calculate the polarization vector at the source
+                                    // calculate the polarization vector of the signalat the source
                                     Pol_vector = GetPolarization(event->Nu_Interaction[0].nnu, launch_vector);
 
                     Vector Pol_vector_src = Pol_vector; //store the src Pol			
@@ -771,8 +736,6 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                     stations[i].strings[j].antennas[k].Mag.push_back(mag);  // magnification factor
                                     stations[i].strings[j].antennas[k].Fresnel.push_back(fresnel);  // Fresnel factor
 
-                                    vmmhz1m_sum = 0;
-
                                     // get the arrival angle at the antenna, and store the relevant polarization factors
                                     GetAngleAnt(receive_vector, detector->stations[i].strings[j].antennas[k], antenna_theta, antenna_phi);  // get theta, phi for signal ray arrived at antenna
 
@@ -796,6 +759,8 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
 
                                     // initially give raysol has actual signal
                                     stations[i].strings[j].antennas[k].SignalExt[ray_sol_cnt] = 1;
+
+                                    vmmhz1m_sum = 0;
 
                                     double vmmhz_filter[(int)(detector->GetFreqBin())];
 
@@ -1772,16 +1737,6 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                         // Imported Electric Field Events (like CRs from CoREAS)
                                         else if (settings1->EVENT_TYPE == 20) {
 
-                                            // Get the electric field from the file
-                                            cout<<"String "<<j<<"  Antenna "<<k<<" with "<<ray_output[0].size()<<" solutions"<<endl;
-                                            double max_efield;
-                                            signal->ReadExternalEField(
-                                                settings1->EXT_EFIELD_DIR, 
-                                                "s" + std::to_string(j) + "a" + std::to_string(k), 
-                                                T_forint[settings1->NFOUR/2 -1] - T_forint[0], // last element minus first element
-                                                max_efield, settings1
-                                            );
-
                                             // Generate signals, propagate, send through antennas, 
                                             // pass through electronics, and read out resulting voltage
                                             if ( max_efield > 0 ) { // A signal was generated
@@ -1878,12 +1833,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                         pol_y[n] = 0.;
                                                         pol_z[n] = 0.;
                                                     }
-                                                } // end loop over bins, populating time and voltage arrays                                    
-
-                                                // Save peak of voltage array
-                                                stations[i].strings[j].antennas[k].PeakV.push_back(
-                                                    FindPeak(V_forfft, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt])
-                                                );
+                                                } // end loop over bins, populating time and voltage arrays  
 
                                                 // Apply polarization at each time step
                                                 double Pol_factor = 1.;
@@ -1897,6 +1847,22 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                     );
                                                     V_forfft[n] *= Pol_factor;
                                                 }
+
+                                                // Store the Polarization Vector
+                                                Vector thetaHat = Vector(cos(antenna_theta *(PI / 180)) *cos(antenna_phi *(PI / 180)),
+                                                    cos(antenna_theta *(PI / 180)) *sin(antenna_phi *(PI / 180)),
+                                                    -sin(antenna_theta *(PI / 180)));
+                                                Vector phiHat = Vector(-sin(antenna_phi *(PI / 180)),
+                                                    cos(antenna_phi *(PI / 180)),
+                                                    0);
+                                                stations[i].strings[j].antennas[k].Pol_vector.push_back(Pol_vector);    // this Pol_vector is for the target antenna
+                                                stations[i].strings[j].antennas[k].Pol_factorH.push_back(abs(phiHat *Pol_vector));
+                                                stations[i].strings[j].antennas[k].Pol_factorV.push_back(abs(thetaHat *Pol_vector));                                  
+
+                                                // Save peak of voltage array
+                                                stations[i].strings[j].antennas[k].PeakV.push_back(
+                                                    FindPeak(V_forfft, stations[i].strings[j].antennas[k].Nnew[ray_sol_cnt])
+                                                );
 
                                                 // this forward fft volts_forfft is now in unit of V at each freq 
                                                 // we can just apply each bin's gain factor to each freq bins
@@ -2035,8 +2001,8 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                                     } // end calculate antenna effective height
                                                     stations[i].strings[j].antennas[k].Heff[ray_sol_cnt].push_back(heff);
 
-                                                    // Tell ApplyAntFactors* to not recalculate the polarization factor
-                                                    //   since it's already been applied with the special flag value -1234
+                                                    // Tell ApplyAntFactors* to not recalculate the polarization factor,
+                                                    //   since it's already been applied, with the special flag value -1234
                                                     Pol_factor = -1234.; 
                                                     Pol_vector = Vector(1,1,1); // Shouldn't be used in any calculations but set to unity just in case
 
@@ -5031,7 +4997,7 @@ double Report::calculatePolFactor(Vector &Pol_vector, int ant_type, double anten
      antenna_phi*=(PI/180);
      antenna_theta*=(PI/180);
 
-     // calculate the local thetaHat and phiHat vectors
+     // calculate the local thetaHat and phiHat vectors representing the arrival direction of the signal
      Vector thetaHat = Vector(cos(antenna_theta)*cos(antenna_phi),
                               cos(antenna_theta)*sin(antenna_phi),
                               -sin(antenna_theta));
