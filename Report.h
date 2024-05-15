@@ -67,6 +67,7 @@ class Antenna_r {
         vector <double> arrival_time;        //time from posnu to antenna (t:0 at posnu)
         vector <int> reflection;     // non-reflected : 0,  reflected : 1
         vector <Position> Pol_vector;   // polarization vector at the antenna
+        vector <Position> Pol_vector_src;   // polarization vector at the antenna
         //vector <Position> n_H;  // normalized vector for H pol
         //vector <Position> n_V;  // normalized vector for V pol
 
