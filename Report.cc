@@ -155,6 +155,7 @@ void Antenna_r::clear() {   // if any vector variable added in Antenna_r, need t
     arrival_time.clear();
     reflection.clear();
     Pol_vector.clear();
+    Pol_vector_src.clear();
     vmmhz.clear();
     Heff.clear();
     Mag.clear();
@@ -433,7 +434,8 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
     double all_receive_ang[2];
 
     double vmmhz1m_tmp, vmmhz1m_sum, vmmhz1m_em;    // currently not using vmmhz1m_em
-    Position Pol_vector;    // polarization vector at the source
+    Position Pol_vector;    // polarization vector that is calculated first at the source then rotated to match the polarization at the antenna
+    Position Pol_vector_src;    // polarization vector at the source
     double mag; // magnification factor. it can vary in case of plane / spherical wave
     double fresnel; // fresnel factor
     double Pol_factor;  // polarization factor
@@ -699,7 +701,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                     // calculate the polarization vector of the signalat the source
                                     Pol_vector = GetPolarization(event->Nu_Interaction[0].nnu, launch_vector);
 
-                    Vector Pol_vector_src = Pol_vector; //store the src Pol			
+                                    Pol_vector_src = Pol_vector; //store the src Pol			
 
                                     icemodel->GetFresnel(ray_output[1][ray_sol_cnt],    // launch_angle
                                         ray_output[2][ray_sol_cnt], // rec_angle
