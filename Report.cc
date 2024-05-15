@@ -613,13 +613,14 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                         settings1->EXT_EFIELD_DIR, 
                                         "s" + std::to_string(j) + "a" + std::to_string(k), 
                                         T_forint[settings1->NFOUR/2 -1] - T_forint[0], // last element minus first element
-                                        max_efield, settings1
+                                        max_efield, 
+                                        receive_vector, antenna_theta, antenna_phi, 
+                                        settings1
                                     );
 
                                     // set viewangle, launch_vector, receive vectors (usually done with GetParameters)
                                     viewangle = signal->CHANGLE_ICE; // aka cherenkov angle
                                     launch_vector = Vector(0,0,-1); 
-                                    receive_vector = Vector(0,0,-1); //     receive_vector = trg.Rotate( receive_angle, src.Cross(trg) ); receive_vector = receive_vector.Unit();
                                     n_trg_slappy = Vector(0, 1, 0);
                                     n_trg_pokey = Vector(1, 0, 0);
 

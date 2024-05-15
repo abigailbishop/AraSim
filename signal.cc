@@ -342,8 +342,10 @@ Signal::~Signal() {
 }
 
 void Signal::ReadExternalEField(
-    string directory, string antenna, 
-    double time_window, double &max_efield,
+    string directory, string antenna, double time_window, 
+    double &max_efield, 
+    Vector receive_vector, 
+    double received_theta, double received_phi, // in degrees
     Settings *settings1
 ){
     // Read in the Electric Field from saved to text files located in 
@@ -398,6 +400,9 @@ void Signal::ReadExternalEField(
                     header.length() - header.find("=", header.find(",")+1)
                 ) );
                 cout<<"  Zenith:  "<<zenith<<", Azimuth: "<<azimuth<<endl;
+                received_theta = zenith*180./PI;
+                received_phi = azimuth*180./PI;
+                receive_vector = -1 * Vector(zenith, azimuth);
                 header="";
                 line++;
                 continue;
