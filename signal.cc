@@ -344,8 +344,8 @@ Signal::~Signal() {
 void Signal::ReadExternalEField(
     string directory, string antenna, double time_window, 
     double &max_efield, 
-    Vector receive_vector, 
-    double received_theta, double received_phi, // in degrees
+    Vector &receive_vector, 
+    double &received_theta, double &received_phi, // in degrees
     Settings *settings1
 ){
     // Read in the Electric Field from saved to text files located in 
