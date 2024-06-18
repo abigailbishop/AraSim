@@ -2269,106 +2269,9 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
 
                         // cout<<"done calculating signal bins / connect or not"<<endl;
 
-                        // grab noise waveform (NFOUR/2 bins or NFOUR) for diode convlv
-                        for (int m = 0; m < stations[i].strings[j].antennas[k].ray_sol_cnt; m++)
-                        {
-                            // loop over raysol numbers
-                            // when ray_sol_cnt == 0, this loop inside codes will not run
-
-                            if (m == 0)
-                            {
-                                // if it's first sol
-
-                                if (connect_signals[m] == 1)
-                                {
-
-                                    // do two convlv with double array m, m+1
-
-                                    Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m], signal_bin[m + 1], stations[i].strings[j].antennas[k].V[m], stations[i].strings[j].antennas[k].V[m + 1], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
-                                }
-                                else if (connect_signals[m] == 0)
-                                {
-                                    // cout << noise_ID << " : " << ch_ID << " : " << i << " : " << endl;
-                                    // do NFOUR/2 size array convlv (m)
-                                    Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m], stations[i].strings[j].antennas[k].V[m], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
-                                }
-                            }
-                            else
-                            {
-                                // if it's not the first sol
-
-                                if (m + 1 < stations[i].strings[j].antennas[k].ray_sol_cnt)
-                                {
-                                    // if there is next raysol
-
-                                    if (connect_signals[m] == 1)
-                                    {
-                                        // next raysol is connected
-
-                                        if (connect_signals[m - 1] == 1)
-                                        {
-                                            // and previous raysol also connected
-
-                                            // double size array with m-1, m, m+1 raysols all added
-                                            //
-                                            Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m - 1], signal_bin[m], signal_bin[m + 1], stations[i].strings[j].antennas[k].V[m - 1], stations[i].strings[j].antennas[k].V[m], stations[i].strings[j].antennas[k].V[m + 1], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
-                                        }
-                                        else if (connect_signals[m - 1] == 0)
-                                        {
-                                            // and previous raysol not connected
-
-                                            // double size array with m, m+1 raysols
-                                            //
-                                            Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m], signal_bin[m + 1], stations[i].strings[j].antennas[k].V[m], stations[i].strings[j].antennas[k].V[m + 1], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
-                                        }
-                                    }
-                                    else if (connect_signals[m] == 0)
-                                    {
-                                        // next raysol is not connected
-
-                                        if (connect_signals[m - 1] == 1)
-                                        {
-                                            // and previous raysol is connected
-
-                                            // skip the process as this should have done before
-                                            //
-
-                                        }
-                                        else if (connect_signals[m - 1] == 0)
-                                        {
-                                            // and previous raysol not connected
-
-                                            // single size array with only m raysol
-                                            //
-                                            Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m], stations[i].strings[j].antennas[k].V[m], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    // there is no next raysol (this "m" is the last raysol)
-
-                                    if (connect_signals[m - 1] == 1)
-                                    {
-                                        // and previous raysol is connected
-
-                                        // skip the process as this should have done before
-                                        //
-
-                                    }
-                                    else if (connect_signals[m - 1] == 0)
-                                    {
-                                        // and previous raysol is not connected
-
-                                        // single size array with only m raysol
-                                        //
-                                        Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m], stations[i].strings[j].antennas[k].V[m], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
-                                    }
-                                }
-                            }   // if not the first raysol (all other raysols)
-
-                        }   // end loop over raysols
-
+                        // Convolve Signals
+                        convolve_signals();
+                        
                         // cout<<"done convlv for signal + noise"<<endl;
                         // I think I have to apply gain difference factors in here...
                         if (settings1->USE_MANUAL_GAINOFFSET == 1)
@@ -3348,6 +3251,109 @@ void Report::rerun_event(Event *event, Detector *detector,
             }
         }
     }
+}
+
+void Report::convolve_signals(){
+    // grab noise waveform (NFOUR/2 bins or NFOUR) for diode convlv
+    for (int m = 0; m < stations[i].strings[j].antennas[k].ray_sol_cnt; m++)
+    {
+        // loop over raysol numbers
+        // when ray_sol_cnt == 0, this loop inside codes will not run
+
+        if (m == 0)
+        {
+            // if it's first sol
+
+            if (connect_signals[m] == 1)
+            {
+
+                // do two convlv with double array m, m+1
+
+                Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m], signal_bin[m + 1], stations[i].strings[j].antennas[k].V[m], stations[i].strings[j].antennas[k].V[m + 1], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
+            }
+            else if (connect_signals[m] == 0)
+            {
+                // cout << noise_ID << " : " << ch_ID << " : " << i << " : " << endl;
+                // do NFOUR/2 size array convlv (m)
+                Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m], stations[i].strings[j].antennas[k].V[m], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
+            }
+        }
+        else
+        {
+            // if it's not the first sol
+
+            if (m + 1 < stations[i].strings[j].antennas[k].ray_sol_cnt)
+            {
+                // if there is next raysol
+
+                if (connect_signals[m] == 1)
+                {
+                    // next raysol is connected
+
+                    if (connect_signals[m - 1] == 1)
+                    {
+                        // and previous raysol also connected
+
+                        // double size array with m-1, m, m+1 raysols all added
+                        //
+                        Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m - 1], signal_bin[m], signal_bin[m + 1], stations[i].strings[j].antennas[k].V[m - 1], stations[i].strings[j].antennas[k].V[m], stations[i].strings[j].antennas[k].V[m + 1], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
+                    }
+                    else if (connect_signals[m - 1] == 0)
+                    {
+                        // and previous raysol not connected
+
+                        // double size array with m, m+1 raysols
+                        //
+                        Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m], signal_bin[m + 1], stations[i].strings[j].antennas[k].V[m], stations[i].strings[j].antennas[k].V[m + 1], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
+                    }
+                }
+                else if (connect_signals[m] == 0)
+                {
+                    // next raysol is not connected
+
+                    if (connect_signals[m - 1] == 1)
+                    {
+                        // and previous raysol is connected
+
+                        // skip the process as this should have done before
+                        //
+
+                    }
+                    else if (connect_signals[m - 1] == 0)
+                    {
+                        // and previous raysol not connected
+
+                        // single size array with only m raysol
+                        //
+                        Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m], stations[i].strings[j].antennas[k].V[m], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
+                    }
+                }
+            }
+            else
+            {
+                // there is no next raysol (this "m" is the last raysol)
+
+                if (connect_signals[m - 1] == 1)
+                {
+                    // and previous raysol is connected
+
+                    // skip the process as this should have done before
+                    //
+
+                }
+                else if (connect_signals[m - 1] == 0)
+                {
+                    // and previous raysol is not connected
+
+                    // single size array with only m raysol
+                    //
+                    Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m], stations[i].strings[j].antennas[k].V[m], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
+                }
+            }
+        }   // if not the first raysol (all other raysols)
+
+    }   // end loop over raysols
+
 }
 
 int Report::triggerCheckLoop(Settings *settings1, Detector *detector, Event *event, Trigger *trigger, int stationID, int trig_search_init, int max_total_bin, int trig_window_bin, int scan_mode ){
