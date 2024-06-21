@@ -2017,6 +2017,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
             // now, check the number of bins we need for portion of noise waveforms
             remain_bin = max_total_bin % settings1->DATA_BIN_SIZE;
             ch_ID = 0;
+            int ants_with_sufficient_signal = 0;
 
             for (int j = 0; j < detector->stations[i].strings.size(); j++)
             {
@@ -2270,11 +2271,12 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                         // cout<<"done calculating signal bins / connect or not"<<endl;
 
                         // Convolve Signals from noise + all rays
-                        convolve_signals(
+                        int convolution_exit_code = convolve_signals(
                             &stations[i].strings[j].antennas[k],
                             noise_ID, ch_ID, i, 
                             settings1, trigger, detector
                         );
+                        if ( convolution_exit_code >= 0 ) ants_with_sufficient_signal++;
                         
                         // cout<<"done convlv for signal + noise"<<endl;
                         // I think I have to apply gain difference factors in here...
@@ -2289,8 +2291,10 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
 
             }   // for strings
 
+            cout<<"("<<ants_with_sufficient_signal<<")";
+
             // do only if it's not in debugmode
-            if (debugmode == 0)
+            if ( (debugmode == 0) && ants_with_sufficient_signal )
             {
 
                 // before we move to next station, do trigger check here!!!
@@ -3257,7 +3261,7 @@ void Report::rerun_event(Event *event, Detector *detector,
     }
 }
 
-void Report::convolve_signals(
+int Report::convolve_signals(
     Antenna_r *antenna, int *noise_ID, int channel_index, int station_index, 
     Settings *settings1, Trigger *trigger, Detector *detector
 ){
@@ -3265,13 +3269,15 @@ void Report::convolve_signals(
     // Takes an antenna and convolves the noise in the antenna with 
     //   signals from each ray solution
 
+    int convolution_exit_code = -200; // Initialize to failure exit code 
+
     for (int m = 0; m < antenna->ray_sol_cnt; m++) { // loop over raysol numbers
         // when ray_sol_cnt == 0, this loop inside codes will not run
 
         if (m == 0) { // if it's first sol
             
             if (connect_signals[m] == 1) { // do two convlv with double array m, m+1
-                Select_Wave_Convlv_Exchange(
+                convolution_exit_code = Select_Wave_Convlv_Exchange(
                     settings1, trigger, detector, 
                     signal_bin[m], signal_bin[m + 1], 
                     antenna->V[m], antenna->V[m + 1], 
@@ -3280,7 +3286,7 @@ void Report::convolve_signals(
                 );
             }
             else if (connect_signals[m] == 0) { // do NFOUR/2 size array convlv (m)
-                Select_Wave_Convlv_Exchange(
+                convolution_exit_code = Select_Wave_Convlv_Exchange(
                     settings1, trigger, detector, 
                     signal_bin[m], 
                     antenna->V[m], 
@@ -3298,7 +3304,7 @@ void Report::convolve_signals(
 
                     if (connect_signals[m - 1] == 1) { // and previous raysol also connected
                         // double size array with m-1, m, m+1 raysols all added
-                        Select_Wave_Convlv_Exchange(
+                        convolution_exit_code = Select_Wave_Convlv_Exchange(
                             settings1, trigger, detector, 
                             signal_bin[m - 1], signal_bin[m], signal_bin[m + 1], 
                             antenna->V[m - 1], antenna->V[m], antenna->V[m + 1], 
@@ -3308,7 +3314,7 @@ void Report::convolve_signals(
                     }
                     else if (connect_signals[m - 1] == 0) { // and previous raysol not connected
                         // double size array with m, m+1 raysols
-                        Select_Wave_Convlv_Exchange(
+                        convolution_exit_code = Select_Wave_Convlv_Exchange(
                             settings1, trigger, detector, 
                             signal_bin[m], signal_bin[m + 1], 
                             antenna->V[m], antenna->V[m + 1], 
@@ -3325,7 +3331,7 @@ void Report::convolve_signals(
                     }
                     else if (connect_signals[m - 1] == 0) { // and previous raysol not connected
                         // single size array with only m raysol
-                        Select_Wave_Convlv_Exchange(
+                        convolution_exit_code = Select_Wave_Convlv_Exchange(
                             settings1, trigger, detector, 
                             signal_bin[m], 
                             antenna->V[m], 
@@ -3344,7 +3350,7 @@ void Report::convolve_signals(
                 }
                 else if (connect_signals[m - 1] == 0) { // and previous raysol is not connected
                     // single size array with only m raysol
-                    Select_Wave_Convlv_Exchange(
+                    convolution_exit_code = Select_Wave_Convlv_Exchange(
                         settings1, trigger, detector, 
                         signal_bin[m], 
                         antenna->V[m], 
@@ -3358,6 +3364,8 @@ void Report::convolve_signals(
         }   // if not the first raysol (all other raysols)
 
     }   // end loop over raysols
+
+    return convolution_exit_code;
 
 }
 
@@ -4147,7 +4155,7 @@ void Report::ClearUselessfromConnect(Detector *detector, Settings *settings1, Tr
 
 
 // this one is for single signal
-void Report::Select_Wave_Convlv_Exchange(Settings *settings1, Trigger *trigger, Detector *detector, int signalbin, vector <double> &V, int *noise_ID, int ID, int StationIndex, vector <double> *V_with_noise) {
+int Report::Select_Wave_Convlv_Exchange(Settings *settings1, Trigger *trigger, Detector *detector, int signalbin, vector <double> &V, int *noise_ID, int ID, int StationIndex, vector <double> *V_with_noise) {
 
     int BINSIZE = settings1->NFOUR/2;
 
@@ -4207,13 +4215,15 @@ void Report::Select_Wave_Convlv_Exchange(Settings *settings1, Trigger *trigger, 
 
     //V_total_forconvlv.clear();
 
+    return 0;
+
 }
 
 
 
 
 // this one is for two connected signals 
-void Report::Select_Wave_Convlv_Exchange(Settings *settings1, Trigger *trigger, Detector *detector, int signalbin1, int signalbin2, vector <double> &V1, vector <double> &V2, int *noise_ID, int ID, int StationIndex, vector <double> *V_with_noise) {
+int Report::Select_Wave_Convlv_Exchange(Settings *settings1, Trigger *trigger, Detector *detector, int signalbin1, int signalbin2, vector <double> &V1, vector <double> &V2, int *noise_ID, int ID, int StationIndex, vector <double> *V_with_noise) {
 
     int BINSIZE = settings1->NFOUR/2;
 
@@ -4287,6 +4297,7 @@ void Report::Select_Wave_Convlv_Exchange(Settings *settings1, Trigger *trigger, 
 
     //V_total_forconvlv.clear();
 
+    return 0;
 
 }
 
@@ -4294,7 +4305,7 @@ void Report::Select_Wave_Convlv_Exchange(Settings *settings1, Trigger *trigger, 
 
 
 // this one is for three connected signals 
-void Report::Select_Wave_Convlv_Exchange(Settings *settings1, Trigger *trigger, Detector *detector, int signalbin0, int signalbin1, int signalbin2, vector <double> &V0, vector <double> &V1, vector <double> &V2, int *noise_ID, int ID, int StationIndex, vector <double> *V_with_noise) {
+int Report::Select_Wave_Convlv_Exchange(Settings *settings1, Trigger *trigger, Detector *detector, int signalbin0, int signalbin1, int signalbin2, vector <double> &V0, vector <double> &V1, vector <double> &V2, int *noise_ID, int ID, int StationIndex, vector <double> *V_with_noise) {
 
     int BINSIZE = settings1->NFOUR/2;
 
@@ -4383,6 +4394,7 @@ void Report::Select_Wave_Convlv_Exchange(Settings *settings1, Trigger *trigger, 
 
     //V_total_forconvlv.clear();
 
+    return 0;
 
 }
 
