@@ -391,14 +391,24 @@ void Signal::ReadExternalEField(
             if (line == 1){
                 string header;
                 std::getline(efield_file, header);
-                double zenith = stod( header.substr(
-                    header.find("=")+1, 
-                    header.find(",")-header.find("=") 
-                ) );
-                double azimuth = stod( header.substr(
-                    header.find("=", header.find(",")+1)+1, 
-                    header.length() - header.find("=", header.find(",")+1)
-                ) );
+                double zenith = 0;
+                double azimuth = 0;
+                try {
+                    zenith = stod( header.substr(
+                        header.find("=")+1, 
+                        header.find(",")-header.find("=") 
+                    ) );
+                    azimuth = stod( header.substr(
+                        header.find("=", header.find(",")+1)+1, 
+                        header.length() - header.find("=", header.find(",")+1)
+                    ) );
+                }
+                catch (...) {
+                    cout<<"  !! Cannot find zenith or azimuth in header of the file."<<endl;
+                    cout<<"  !! Please list them in the header as 'Theta=1.234, Phi=5.678'"<<endl;
+                    zenith = -1000;
+                    azimuth = -1000;
+                }
                 cout<<"  Zenith:  "<<zenith<<", Azimuth: "<<azimuth<<endl;
                 received_theta = zenith*180./PI;
                 received_phi = azimuth*180./PI;
