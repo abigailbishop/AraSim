@@ -197,7 +197,7 @@ double changle; // cherenkov angle
   std::vector<double> external_efield_z;
   void ReadExternalEField(
       std::string directory, std::string antenna, double time_window, 
-      double &max_efield, 
+      double &max_efield, double &arrival_time,
       Vector &receive_vector, double &received_theta, double &received_phi,
       Settings *settings1
   );

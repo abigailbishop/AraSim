@@ -343,7 +343,7 @@ Signal::~Signal() {
 
 void Signal::ReadExternalEField(
     string directory, string antenna, double time_window, 
-    double &max_efield, 
+    double &max_efield, double &arrival_time,
     Vector &receive_vector, 
     double &received_theta, double &received_phi, // in degrees
     Settings *settings1
@@ -373,6 +373,7 @@ void Signal::ReadExternalEField(
     ifstream efield_file(filename);
     max_efield = 0;
     double max_efield_time = 0;
+    bool signal_arrived = false;
     double this_time;
     double this_efx;
     double this_efy;
@@ -458,6 +459,11 @@ void Signal::ReadExternalEField(
             if ( ef_magnitude > max_efield ) {
                 max_efield = ef_magnitude;
                 max_efield_time = this_time;
+            }
+
+            if ( (!signal_arrived) && (ef_magnitude > 0.) ){
+                signal_arrived = true;
+                arrival_time = this_time / 1e9; // Save arrival time in seconds
             }
 
             line++;

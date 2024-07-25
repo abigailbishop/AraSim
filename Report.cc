@@ -614,6 +614,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                         "s" + std::to_string(j) + "a" + std::to_string(k), 
                                         T_forint[settings1->NFOUR/2 -1] - T_forint[0], // last element minus first element
                                         max_efield, 
+                                        stations[i].strings[j].antennas[k].arrival_time[ray_sol_cnt],
                                         receive_vector, antenna_theta, antenna_phi, 
                                         settings1
                                     );
@@ -2793,7 +2794,6 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                 {
 
                                     // do two convlv with double array m, m+1
-
                                     Select_Wave_Convlv_Exchange(settings1, trigger, detector, signal_bin[m], signal_bin[m + 1], stations[i].strings[j].antennas[k].V[m], stations[i].strings[j].antennas[k].V[m + 1], noise_ID, ch_ID, i, &stations[i].strings[j].antennas[k].V_noise[m]);
                                 }
                                 else if (connect_signals[m] == 0)
