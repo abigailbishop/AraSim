@@ -611,7 +611,7 @@ void Report::Connect_Interaction_Detector_V2(Event *event, Detector *detector, R
                                     cout<<"String "<<j<<"  Antenna "<<k<<" with "<<ray_output[0].size()<<" solutions"<<endl;
                                     signal->ReadExternalEField(
                                         settings1->EXT_EFIELD_DIR, 
-                                        "s" + std::to_string(j) + "a" + std::to_string(k), 
+                                        "s" + std::to_string(j) + "a" + std::to_string(k) + "r" + std::to_string(ray_sol_cnt), 
                                         T_forint[settings1->NFOUR/2 -1] - T_forint[0], // last element minus first element
                                         max_efield, 
                                         stations[i].strings[j].antennas[k].arrival_time[ray_sol_cnt],

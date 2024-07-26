@@ -342,7 +342,7 @@ Signal::~Signal() {
 }
 
 void Signal::ReadExternalEField(
-    string directory, string antenna, double time_window, 
+    string directory, string file_to_open, double time_window, 
     double &max_efield, double &arrival_time,
     Vector &receive_vector, 
     double &received_theta, double &received_phi, // in degrees
@@ -369,7 +369,7 @@ void Signal::ReadExternalEField(
 
     // Read file
     int line=1;
-    std::string filename = directory+"/"+antenna;
+    std::string filename = directory+"/"+file_to_open;
     ifstream efield_file(filename);
     max_efield = 0;
     double max_efield_time = 0;
